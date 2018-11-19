@@ -36,62 +36,73 @@ parser <- add_option (parser, c ("--endcluster"), type="integer", default = 20, 
 
 opts <- parse_args(parser)
 
-flowEMMi_sample<-function(frame,ch1="FS.Log",ch2="FL.4.Log",x_start=0,
-                            x_end=4095,y_start=700,y_end=4095,use_log=TRUE,diff.ll=1,sample_size=10,start_cluster=8,end_cluster=15,prior=FALSE,pi_prior,mu_prior,sigma_prior,separation=TRUE,max_inits=5,total=FALSE,alpha=.05,img_format="png",verbose=TRUE){
-    mat<-exprs(frame)
-    print(typeof(frame))
-    print(summary(frame))
-    mFSC<-mat[,ch1]
-    mFL<-mat[,ch2]
-    coords <- list(c(x_start,x_end+min(mFSC)), c(y_start,y_end+min(mFL))) # define subset area
-    names(coords) <- c(ch1, ch2)
-    Noise <- rectangleGate(filterId="Noise",  .gate = coords) # filter noise
-    Noise.subset <- Subset(frame, Noise)
-    matNoise<-exprs(Noise.subset)
-    mNoiseFSC<-matNoise[,ch1]
-    mNoiseFL<-matNoise[,ch2]
-    dim1<- mNoiseFSC
-    dim2<- mNoiseFL
-    dimensions<-cbind(dim1,dim2) #both dimensions as matrix
-########### Sampling
-    if(img_format=="png"){
-      png(file=paste0(sample_size,"_sample.png"),bg="white",width = 12, height = 12, units = 'in', res = 300)
-    }else if(img_format=="svg"){
-      svg(filename=paste0(sample_size,"_sample.svg"),width = 12, height = 12,pointsize = 12, bg = "white")
-    }
-    dimensionssample<-dimensions[sample(nrow(dimensions),size=nrow(dimensions)/sample_size,replace=FALSE),]
-    colnames(dimensionssample)<-c(ch1,ch2)
-      if(use_log==TRUE){
-        plot(dimensionssample,yaxt="n",xaxt="n",log="xy",type="p",cex=.6,pch=19,xlim=c(min(mFSC),max(mFSC)),ylim=c(min(mFL),max(mFL)),xlab=ch1,ylab=ch2)
-        axis(1,at=c(1,10,100,1000,10000), labels=c(expression(paste("10"^"0")),expression(paste("10"^"1")),expression(paste("10"^"2")),expression(paste("10"^"3")),expression(paste("10"^"4"))))
-        axis(2,at=c(1,10,100,1000,10000), labels=c(expression(paste("10"^"0")),expression(paste("10"^"1")),expression(paste("10"^"2")),expression(paste("10"^"3")),expression(paste("10"^"4"))))
-      }else{
-        plot(dimensionssample,type="p",cex=.6,pch=19,xlim=c(min(mFSC),max(mFSC)),ylim=c(min(mFL),max(mFL)),xlab=ch1,ylab=ch2)
-      }
-      dev.off()
-        n<-nrow(dimensionssample)
-####################
-        BIC<-rep(0,end_cluster)
-        palette <- distinctColorPalette(end_cluster)
-        act_T<-list()
-        act_P_mat<-list()
-        act_pi<-list()
-        pis<-list()
-        act_mu<-list()
-        mus<-list()
-        act_sigma<-list()
-        sigmas<-list()
-        act_loglik<-list()
-        act_iterations<-list()
-        probs<-list()
-        ll<-list()
-        newList<-list()
-#        for(c in start_cluster:end_cluster){
-#          print(paste0("Number of clusters: ",c))
-#          number_of_inits<-1
-#          ll[c][1]<-0
-#          counter<-2
-#          repeat{
+flowEMMi_sample<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
+                         , x_start=0, x_end=4095,y_start=700,y_end=4095
+                         ,use_log=TRUE,diff.ll=1,sample_size=10,start_cluster=8,end_cluster=15,prior=FALSE
+                         ,pi_prior,mu_prior,sigma_prior,separation=TRUE,max_inits=5,total=FALSE,alpha=.05,img_format="png",verbose=TRUE)
+{
+  mat<-exprs(frame)
+  print(typeof(frame))
+  print(summary(frame))
+  mFSC<-mat[,ch1]
+  mFL<-mat[,ch2]
+  coords <- list(c(x_start,x_end+min(mFSC)), c(y_start,y_end+min(mFL))) # define subset area
+  names(coords) <- c(ch1, ch2)
+  Noise <- rectangleGate(filterId="Noise",  .gate = coords) # filter noise
+  Noise.subset <- Subset(frame, Noise)
+  matNoise<-exprs(Noise.subset)
+  mNoiseFSC<-matNoise[,ch1]
+  mNoiseFL<-matNoise[,ch2]
+  dim1<- mNoiseFSC
+  dim2<- mNoiseFL
+  dimensions<-cbind(dim1,dim2) #both dimensions as matrix
+
+  # pretty picture
+  if(img_format=="png")
+  {
+    png(file=paste0(sample_size,"_sample.png"),bg="white",width = 12, height = 12, units = 'in', res = 300)
+  }else if(img_format=="svg")
+  {
+    svg(filename=paste0(sample_size,"_sample.svg"),width = 12, height = 12,pointsize = 12, bg = "white")
+  }
+  dimensionssample<-dimensions[sample(nrow(dimensions),size=nrow(dimensions)/sample_size,replace=FALSE),]
+  colnames(dimensionssample)<-c(ch1,ch2)
+  if(use_log==TRUE)
+  {
+    plot(dimensionssample,yaxt="n",xaxt="n",log="xy",type="p",cex=.6,pch=19,xlim=c(min(mFSC),max(mFSC)),ylim=c(min(mFL),max(mFL)),xlab=ch1,ylab=ch2)
+    axis(1,at=c(1,10,100,1000,10000), labels=c(expression(paste("10"^"0")),expression(paste("10"^"1")),expression(paste("10"^"2")),expression(paste("10"^"3")),expression(paste("10"^"4"))))
+    axis(2,at=c(1,10,100,1000,10000), labels=c(expression(paste("10"^"0")),expression(paste("10"^"1")),expression(paste("10"^"2")),expression(paste("10"^"3")),expression(paste("10"^"4"))))
+  }else
+  {
+    plot(dimensionssample,type="p",cex=.6,pch=19,xlim=c(min(mFSC),max(mFSC)),ylim=c(min(mFL),max(mFL)),xlab=ch1,ylab=ch2)
+  }
+  dev.off()
+  n<-nrow(dimensionssample)
+
+  BIC<-rep(0,end_cluster)
+  palette <- distinctColorPalette(end_cluster)
+  act_T<-list()
+  act_P_mat<-list()
+  act_pi<-list()
+  pis<-list()
+  act_mu<-list()
+  mus<-list()
+  act_sigma<-list()
+  sigmas<-list()
+  act_loglik<-list()
+  act_iterations<-list()
+  probs<-list()
+  ll<-list()
+  newList<-list()
+
+  for(c in start_cluster:end_cluster)
+  {
+    print(paste0("Number of clusters: ",c))
+    number_of_inits<-1
+    ll[c][1]<-0
+    counter<-2
+    repeat
+    {
 #            if(prior==FALSE){
 #              loglik<- c()
 #              loglik[1]<-0
@@ -407,11 +418,11 @@ flowEMMi_sample<-function(frame,ch1="FS.Log",ch2="FL.4.Log",x_start=0,
 #                          newList$matrix<-plot_matrix
 #                            break
 #                          }
-#                        }
-}
+    } # repeat
+  } # for start_cluster ... end_cluster
 #        if(verbose)
 #          return (newList)
-#                }
+} # flowEMMi_sample
 
 
 # load sample
