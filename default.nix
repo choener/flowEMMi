@@ -3,7 +3,7 @@
 
 with import <nixpkgs> {};
 let
-  flowEmmiR = rWrapper.override { packages = with rPackages; [ Rcpp RcppEigen optparse flowCore flowViz ggplot2 gtools randomcoloR ]; };
+  flowEmmiR = rWrapper.override { packages = with rPackages; [ Rcpp RcppEigen optparse flowCore flowViz ggplot2 gtools randomcoloR ellipse ]; };
 in
   flowEmmiR
 
