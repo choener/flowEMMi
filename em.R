@@ -32,7 +32,7 @@ parser <- add_option (parser, c ("--separation"), action = "store_true", default
 parser <- add_option (parser, c ("--inits"), type="integer", default = 10, help="")
 parser <- add_option (parser, c ("--log"), action = "store_true", default=FALSE, help="")
 parser <- add_option (parser, c ("--alpha"), type="double", default = 0.5, help="")
-parser <- add_option (parser, c ("--imgformat"), type="character", default = "svg", help="")
+parser <- add_option (parser, c ("--imgformat"), type="character", default = "png", help="")
 parser <- add_option (parser, c ("--startcluster"), type="integer", default = 2, help="")
 parser <- add_option (parser, c ("--endcluster"), type="integer", default = 20, help="")
 
@@ -424,6 +424,21 @@ flowEMMi_sample<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   } # for start_cluster ... end_cluster
 #        if(verbose)
 #          return (newList)
+  png(file="bic.png",bg="white",width = 12, height = 12, units = 'in', res = 300)
+  plot(newList$BIC)
+  dev.off()
+  sink("bic.txt")
+  print (newList$BIC)
+  sink()
+  for(c in start_cluster:end_cluster)
+  {
+    sink(paste0("cluster-positions-",c,".txt"))
+    cat("Positions\n")
+    print(newList$mu[[c]])
+    cat("\nCovariance Matrices\n")
+    print(newList$sigma[[c]])
+    sink()
+  } # output
 } # flowEMMi_sample
 
 
