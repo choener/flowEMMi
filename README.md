@@ -17,12 +17,8 @@ Here are a number of ways how to run flowEMMi for your data.
 
 ### any linux
 
-We provide a wrapped executable that contains all required dependencies for
-simple testing. Please note that this should be used mostly for testing, since
-the startup time is quite long. For production use, install the dependencies
-and use the *cpp and *.R files directly or use the NixOS version.
-
-TODO nix-bundle
+Install the dependencies (as given in the em.R header), afterwards continue
+with the ```./em.R --help``` line below.
 
 ### under NixOS
 
