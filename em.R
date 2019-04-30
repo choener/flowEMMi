@@ -15,7 +15,7 @@ library (optparse)
 library (randomcoloR)
 library (Rcpp)
 
-sourceCpp("./em_fast_sigma.cpp")
+sourceCpp(file = "./em_fast_sigma.cpp", cacheDir = "./.cacheDir")
 
 parser <- OptionParser ()
 parser <- add_option (parser, c ("-v", "--verbose"), action = "store_true", default=FALSE, help="be very verbose")
