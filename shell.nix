@@ -4,7 +4,6 @@
 with import <nixpkgs> {};
 let
   flowEmmiR = import ./.;
-  #flowEmmiR = rWrapper.override { packages = with rPackages; [ Rcpp RcppEigen optparse flowCore flowViz ggplot2 gtools randomcoloR mvtnorm mixtools ]; };
 in
   flowEmmiR
 
