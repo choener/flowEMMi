@@ -18,6 +18,9 @@ library (Rcpp)
 
 sourceCpp(file = "./em_fast_sigma.cpp", cacheDir = "./.cacheDir")
 
+source("classes.R")
+source("plotting.R")
+
 parser <- OptionParser ()
 parser <- add_option (parser, c ("-v", "--verbose"), action = "store_true", default=FALSE, help="be very verbose")
 parser <- add_option (parser, c ("-f", "--file"), type="character", default = "", help="file to process")
@@ -39,47 +42,35 @@ parser <- add_option (parser, c ("--endcluster"), type="integer", default = 20, 
 
 opts <- parse_args(parser)
 
+
+
+
+# run the sampling function
+
 flowEMMi_sample<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                          , x_start=0, x_end=4095,y_start=700,y_end=4095
                          ,use_log=TRUE,diff.ll=1,sample_size=10,start_cluster=8,end_cluster=15,prior=FALSE
                          ,pi_prior,mu_prior,sigma_prior,separation=TRUE,max_inits=5,total=FALSE,alpha=.05,img_format="png",verbose=TRUE)
 {
   mat<-exprs(frame)
-  print(typeof(frame))
-  print(summary(frame))
-  mFSC<-mat[,ch1]
-  mFL<-mat[,ch2]
-  coords <- list(c(x_start,x_end+min(mFSC)), c(y_start,y_end+min(mFL))) # define subset area
-  names(coords) <- c(ch1, ch2)
-  Noise <- rectangleGate(filterId="Noise",  .gate = coords) # filter noise
-  Noise.subset <- Subset(frame, Noise)
-  matNoise<-exprs(Noise.subset)
-  mNoiseFSC<-matNoise[,ch1]
-  mNoiseFL<-matNoise[,ch2]
-  dim1<- mNoiseFSC
-  dim2<- mNoiseFL
-  dimensions<-cbind(dim1,dim2) #both dimensions as matrix
+  #print(typeof(frame))
+  pd <- mkFlowData(nth = sample_size
+                   , xChannel=ch1, yChannel=ch2
+                   , xMin=x_start, xMax=x_end
+                   , yMin=y_start, yMax=y_end
+                   , data=frame)
+  #print(summary(frame))
+  # extract data vectors, and calculate data limits
+  #mFSC<-mat[,ch1]
+  #mFL<-mat[,ch2]
+  #xLimits <- c(min(mFSC), max(mFSC) )
+  #yLimits <- c(min(mFL), max(mFL) )
+  #preparedData <- prepareData()
+  dimensions <- pd@data
+  dimensionsSample <- pd@sampled
 
-  # pretty picture
-  if(img_format=="png")
-  {
-    png(file=paste0(sample_size,"_sample.png"),bg="white",width = 12, height = 12, units = 'in', res = 300)
-  }else if(img_format=="svg")
-  {
-    svg(filename=paste0(sample_size,"_sample.svg"),width = 12, height = 12,pointsize = 12, bg = "white")
-  }
-  dimensionssample<-dimensions[sample(nrow(dimensions),size=nrow(dimensions)/sample_size,replace=FALSE),]
-  colnames(dimensionssample)<-c(ch1,ch2)
-  if(use_log==TRUE)
-  {
-    plot(dimensionssample,yaxt="n",xaxt="n",log="xy",type="p",cex=.6,pch=19,xlim=c(min(mFSC),max(mFSC)),ylim=c(min(mFL),max(mFL)),xlab=ch1,ylab=ch2)
-    axis(1,at=c(1,10,100,1000,10000), labels=c(expression(paste("10"^"0")),expression(paste("10"^"1")),expression(paste("10"^"2")),expression(paste("10"^"3")),expression(paste("10"^"4"))))
-    axis(2,at=c(1,10,100,1000,10000), labels=c(expression(paste("10"^"0")),expression(paste("10"^"1")),expression(paste("10"^"2")),expression(paste("10"^"3")),expression(paste("10"^"4"))))
-  }else
-  {
-    plot(dimensionssample,type="p",cex=.6,pch=19,xlim=c(min(mFSC),max(mFSC)),ylim=c(min(mFL),max(mFL)),xlab=ch1,ylab=ch2)
-  }
-  dev.off()
+  plotInputData(pd@sampled, nth=pd@nth, logScaled = use_log, imageFormat = img_format)
+  error ()
   n<-nrow(dimensionssample)
 
   BIC<-rep(0,end_cluster)
