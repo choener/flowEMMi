@@ -1,6 +1,6 @@
 
 # limits
-setClass (Class="Limits", representation(channel="character", min="numeric", max="numeric"))
+setClass (Class="Limits", slots=c(channel="character", min="numeric", max="numeric"))
 
 # creation function
 mkLimits <- function(channel, vs)
@@ -18,7 +18,7 @@ limitsC <- function(l)
 
 
 # a data object, including its limits
-setClass (Class="FlowDataObject", representation(data="matrix", x="Limits", y="Limits"))
+setClass (Class="FlowDataObject", slots=c(data="matrix", x="Limits", y="Limits"))
 mkFlowDataObject <- function(data, xChannel, yChannel)
 {
   xs <- data[,xChannel]
@@ -29,7 +29,12 @@ mkFlowDataObject <- function(data, xChannel, yChannel)
 
 
 # input parameters, as a class
-setClass (Class="FlowData", representation(data="FlowDataObject", sampled="FlowDataObject", nth="numeric"))
+setClass (Class="FlowData", slots=c(data="FlowDataObject", sampled="FlowDataObject", nth="numeric"), validity=validFlowData)
+validFlowData <- function(object)
+{
+  #TODO we should check certain things
+  TRUE
+}
 
 # create flow data object, including correct subsampling, etc
 # "nth" is the subsampling parameters >= 1
@@ -55,5 +60,42 @@ mkFlowData <- function(nth=1, xChannel, yChannel, xMin, xMax, yMin, yMax, data)
               , sampled=mkFlowDataObject(data=subsampled, xChannel=xChannel, yChannel=yChannel)
               , nth=nth
               ))
+}
+
+
+
+# a single run of the EM algorithm with a given number of clusters
+setClass (Class="EMRun", slots=c(mu="matrix", sigma="matrix", weight="matrix", logL="numeric"
+                                 ,mus="list", sigmas="list", weights="list", logLs="list"))
+mkEMRun <- function ()
+{
+  return (new("EMRun"
+              , mu=c()
+              , sigma=c()
+              , weight=c()
+              , logL=Inf
+              , mus=list()
+              , sigmas=list()
+              , logLs=list()
+              , weights=list()))
+}
+
+
+
+# include the newest mu, sigma, logL values in the EMRun
+updateEMRun <- function (em, mu, sigma, w, logL)
+{
+  n <- 1 + error(em@mu)
+  # store old data
+  em@mus[n] <- em@mu
+  em@sigmas[n] <- error()
+  em@weights[n] <- error()
+  em@logLs[n] <- error()
+  #
+  em@mu <- mu
+  em@sigma <- sigma
+  em@weight <- w
+  em@logL <- logL
+  return em
 }
 

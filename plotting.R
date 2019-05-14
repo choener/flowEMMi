@@ -1,6 +1,8 @@
 
 source("classes.R")
 
+
+
 # create plot of the (possibly sampling reduced) input data.
 
 plotInputData <- function (data, nth, logScaled, imageFormat = "png")
@@ -37,6 +39,16 @@ plotInputData <- function (data, nth, logScaled, imageFormat = "png")
          ,xlab=data@x@channel
          ,ylab=data@y@channel)
   }
+  dev.off()
+}
+
+
+
+# plot the BIC information
+plotBIC <- function (bic)
+{
+  png(file="bic.png",bg="white",width = 12, height = 12, units = 'in', res = 300)
+  plot(newList$BIC)
   dev.off()
 }
 

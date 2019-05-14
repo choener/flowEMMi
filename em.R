@@ -13,13 +13,12 @@ library (mixtools)
 library (mvtnorm)
 library (optparse)
 library (colortools)
-#library (randomcoloR)
 library (Rcpp)
-
-sourceCpp(file = "./em_fast_sigma.cpp", cacheDir = "./.cacheDir")
 
 source("classes.R")
 source("plotting.R")
+source("writestats.R")
+source("emwrapper.R")
 
 parser <- OptionParser ()
 parser <- add_option (parser, c ("-v", "--verbose"), action = "store_true", default=FALSE, help="be very verbose")
@@ -53,19 +52,11 @@ flowEMMi_sample<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                          ,pi_prior,mu_prior,sigma_prior,separation=TRUE,max_inits=5,total=FALSE,alpha=.05,img_format="png",verbose=TRUE)
 {
   mat<-exprs(frame)
-  #print(typeof(frame))
   pd <- mkFlowData(nth = sample_size
                    , xChannel=ch1, yChannel=ch2
                    , xMin=x_start, xMax=x_end
                    , yMin=y_start, yMax=y_end
                    , data=frame)
-  #print(summary(frame))
-  # extract data vectors, and calculate data limits
-  #mFSC<-mat[,ch1]
-  #mFL<-mat[,ch2]
-  #xLimits <- c(min(mFSC), max(mFSC) )
-  #yLimits <- c(min(mFL), max(mFL) )
-  #preparedData <- prepareData()
   dimensions <- pd@data
   dimensionsSample <- pd@sampled
 
@@ -98,101 +89,98 @@ flowEMMi_sample<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
     counter<-2
     repeat
     {
-            if(prior==FALSE){
-              loglik<- c()
-              loglik[1]<-0
-              iterations<-1
-              diff.tmp <- 1000
-              P_mat<-rdirichlet(n,rep(1,c))
-              while(diff.tmp > diff.ll) {
-                if(iterations==1){
-                  pi<-colMeans(P_mat)
-                  start<-dimensionssample[sample(nrow(dimensionssample),size=c,replace=FALSE),]
-                  mu<-t(start)
-                  sigma<-calc_sigma(P_mat,mu,dimensionssample)
-                  T<-calc_T(pi,mu,sigma,dimensionssample)
-                  loglik[iterations+1] <- calc_loglik(T) #compute log likelihood
-                  ll[[c]][counter]<-loglik[iterations+1]
-                  if(iterations >= 2){
-                    diff.tmp <- abs(loglik[iterations+1]-loglik[iterations])
-                  }
-                  P_mat<-calc_Pmat(T)
-                    loglikelihood=loglik[iterations+1]
-                  it<-iterations
-                    iterations<-iterations+1
-                  counter<-counter+1
-                }else{
-################## M-step
-                  pi<-colMeans(P_mat)
-                  mu<-calc_mu(P_mat,dimensionssample)
-                  sigma<-calc_sigma(P_mat,mu,dimensionssample)
-                  T<-calc_T(pi,mu,sigma,dimensionssample)
-                  loglik[iterations+1] <- calc_loglik(T) #compute log likelihood
-                  ll[[c]][counter]<- loglik[iterations+1]
-                  if(iterations >= 2){
-                    diff.tmp <- abs(loglik[iterations+1]-loglik[iterations])
-                  }
-                  P_mat<-calc_Pmat(T)
-                    loglikelihood=loglik[iterations+1]
-                  it<-iterations
-                    iterations<-iterations+1
-                  counter<-counter+1
-                }
-              }
-            }else if(prior==TRUE){
-              number_of_inits<-max_inits
-              loglik<- c()
-              loglik[1]<-0
-              iterations<-1
-              diff.tmp <- 1000  
-              while(diff.tmp > diff.ll) { 
-                print(iterations)
-                if(iterations==1){
-                  pi<-pi_prior[[c]]
-                  mu<-mu_prior[[c]]
-                  sigma<-sigma_prior[[c]]
-                  tic(msg="Build T[,m]")
-                  T<-calc_T(pi,mu,sigma,dimensionssample)
-                  toc()
-                  tic(msg="Compute log-likelihood")
-                  loglik[iterations+1] <- calc_loglik(T) #compute log likelihood
-                  toc()
-                  ll[[c]][counter]<-loglik[iterations+1]
-                  tic(msg="Compute new P_mat")
-                  P_mat<-calc_Pmat(T)
-                  toc()
-                  loglikelihood=loglik[iterations+1]
-                  it<-iterations
-                  iterations<-iterations+1
-                  counter<-counter+1  
-                }else{
-                  tic(msg="Calculate pi's")
-                  pi<-colMeans(P_mat)
-                  toc()
-                  tic(msg="calculate new mu")
-                  mu<-calc_mu(P_mat,dimensionssample)
-                  toc()
-                  tic(msg="calculate new sigma")
-                  sigma<-calc_sigma(P_mat,mu,dimensionssample)
-                  toc()
-                  tic("Calculate T")
-                  T<-calc_T(pi,mu,sigma,dimensionssample)
-                  toc()
-                  tic(msg="Compute log-likelihood")
-                  loglik[iterations+1] <- calc_loglik(T) #compute log likelihood
-                  toc()
-                  ll[[c]][counter]<-loglik[iterations+1]
-                  diff.tmp <- abs(loglik[iterations+1]-loglik[iterations])
-                  tic(msg="Compute new P_mat")
-                  P_mat<-calc_Pmat(T)
-                  toc()
-                  loglikelihood=loglik[iterations+1]
-                  it<-iterations
-                  iterations<-iterations+1
-                  counter<-counter+1
-                }
-              }
-            }
+      if(prior==FALSE){
+        iterateEM ()
+        error ()
+#        while(diff.tmp > diff.ll) {
+#          if(iterations==1){
+#            pi<-eigenMeanClusterProb(P_mat)
+#            start<-dimensionssample[sample(nrow(dimensionssample),size=c,replace=FALSE),]
+#            mu<-t(start)
+#            sigma<-eigenSigma(P_mat,mu,dimensionssample)
+#            T<-calc_T(pi,mu,sigma,dimensionssample)
+#            loglik[iterations+1] <- eigenLogLikelihood(T) #compute log likelihood
+#            ll[[c]][counter]<-loglik[iterations+1]
+#            if(iterations >= 2){
+#              diff.tmp <- abs(loglik[iterations+1]-loglik[iterations])
+#            }
+#            P_mat<-calc_Pmat(T)
+#              loglikelihood=loglik[iterations+1]
+#            it<-iterations
+#              iterations<-iterations+1
+#            counter<-counter+1
+#          }else{
+############# M-step
+#            pi<-eigenMeanClusterProb(P_mat)
+#            mu<-eigenMu(P_mat,dimensionssample)
+#            sigma<-eigenSigma(P_mat,mu,dimensionssample)
+#            T<-calc_T(pi,mu,sigma,dimensionssample)
+#            loglik[iterations+1] <- eigenLogLikelihood(T) #compute log likelihood
+#            ll[[c]][counter]<- loglik[iterations+1]
+#            if(iterations >= 2){
+#              diff.tmp <- abs(loglik[iterations+1]-loglik[iterations])
+#            }
+#            P_mat<-calc_Pmat(T)
+#              loglikelihood=loglik[iterations+1]
+#            it<-iterations
+#              iterations<-iterations+1
+#            counter<-counter+1
+#          }
+#        } # while diff.tmp > diff.ll
+      }else if(prior==TRUE){
+        number_of_inits<-max_inits
+        loglik<- c()
+        loglik[1]<-0
+        iterations<-1
+        diff.tmp <- 1000  
+        while(diff.tmp > diff.ll) { 
+          print(iterations)
+          if(iterations==1){
+            pi<-pi_prior[[c]]
+            mu<-mu_prior[[c]]
+            sigma<-sigma_prior[[c]]
+            tic(msg="Build T[,m]")
+            T<-calc_T(pi,mu,sigma,dimensionssample)
+            toc()
+            tic(msg="Compute log-likelihood")
+            loglik[iterations+1] <- eigenLogLikelihood(T) #compute log likelihood
+            toc()
+            ll[[c]][counter]<-loglik[iterations+1]
+            tic(msg="Compute new P_mat")
+            P_mat<-calc_Pmat(T)
+            toc()
+            loglikelihood=loglik[iterations+1]
+            it<-iterations
+            iterations<-iterations+1
+            counter<-counter+1  
+          }else{
+            tic(msg="Calculate pi's")
+            pi<-eigenMeanClusterProb(P_mat)
+            toc()
+            tic(msg="calculate new mu")
+            mu<-eigenMu(P_mat,dimensionssample)
+            toc()
+            tic(msg="calculate new sigma")
+            sigma<-eigenSigma(P_mat,mu,dimensionssample)
+            toc()
+            tic("Calculate T")
+            T<-calc_T(pi,mu,sigma,dimensionssample)
+            toc()
+            tic(msg="Compute log-likelihood")
+            loglik[iterations+1] <- eigenLogLikelihood(T) #compute log likelihood
+            toc()
+            ll[[c]][counter]<-loglik[iterations+1]
+            diff.tmp <- abs(loglik[iterations+1]-loglik[iterations])
+            tic(msg="Compute new P_mat")
+            P_mat<-calc_Pmat(T)
+            toc()
+            loglikelihood=loglik[iterations+1]
+            it<-iterations
+            iterations<-iterations+1
+            counter<-counter+1
+          }
+        }
+      } #
             if(number_of_inits==1){
               print("First initialization.")
               act_T[[c]]<-T
@@ -415,23 +403,12 @@ flowEMMi_sample<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                           }
     } # repeat
   } # for start_cluster ... end_cluster
-#        if(verbose)
-#          return (newList)
-  png(file="bic.png",bg="white",width = 12, height = 12, units = 'in', res = 300)
-  plot(newList$BIC)
-  dev.off()
-  sink("bic.txt")
-  print (newList$BIC)
-  sink()
+  plotBIC (newList$BIC)
+  statBIC (newList$BIC)
   for(c in start_cluster:end_cluster)
   {
-    sink(paste0("cluster-positions-",c,".txt"))
-    cat("Positions\n")
-    print(newList$mu[[c]])
-    cat("\nCovariance Matrices\n")
-    print(newList$sigma[[c]])
-    sink()
-  } # output
+    statCluster(newList$mu[[c]], newList$sigma[[c]])
+  }
 } # flowEMMi_sample
 
 
