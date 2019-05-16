@@ -29,12 +29,12 @@ mkFlowDataObject <- function(data, xChannel, yChannel)
 
 
 # input parameters, as a class
-setClass (Class="FlowData", slots=c(data="FlowDataObject", sampled="FlowDataObject", nth="numeric"), validity=validFlowData)
 validFlowData <- function(object)
 {
   #TODO we should check certain things
   TRUE
 }
+setClass (Class="FlowData", slots=c(data="FlowDataObject", sampled="FlowDataObject", nth="numeric"), validity=validFlowData)
 
 # create flow data object, including correct subsampling, etc
 # "nth" is the subsampling parameters >= 1
@@ -65,37 +65,34 @@ mkFlowData <- function(nth=1, xChannel, yChannel, xMin, xMax, yMin, yMax, data)
 
 
 # a single run of the EM algorithm with a given number of clusters
-setClass (Class="EMRun", slots=c(mu="matrix", sigma="matrix", weight="matrix", logL="numeric"
-                                 ,mus="list", sigmas="list", weights="list", logLs="list"))
+setClass (Class="EMRun", slots=c(mu="matrix", sigma="list", weight="matrix", logL="numeric"
+                                 ))
 mkEMRun <- function ()
 {
   return (new("EMRun"
-              , mu=c()
-              , sigma=c()
-              , weight=c()
+              , mu=matrix()
+              , sigma=list()
+              , weight=matrix()
               , logL=Inf
-              , mus=list()
-              , sigmas=list()
-              , logLs=list()
-              , weights=list()))
+              ))
 }
 
 
 
 # include the newest mu, sigma, logL values in the EMRun
-updateEMRun <- function (em, mu, sigma, w, logL)
+updateEMRun <- function (em, mu, sigma, weight, logL)
 {
-  n <- 1 + error(em@mu)
-  # store old data
-  em@mus[n] <- em@mu
-  em@sigmas[n] <- error()
-  em@weights[n] <- error()
-  em@logLs[n] <- error()
-  #
+#  n <- 1 + length (em@mu)
+#  # store old data
+#  em@mus[n] <- mu
+#  em@sigmas[n] <- sigma
+#  em@weights[n] <- w
+#  em@logLs[n] <- logL
+  # setup new
   em@mu <- mu
   em@sigma <- sigma
-  em@weight <- w
+  em@weight <- weight
   em@logL <- logL
-  return em
+  return (em)
 }
 

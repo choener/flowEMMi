@@ -61,8 +61,7 @@ flowEMMi_sample<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   dimensionsSample <- pd@sampled
 
   plotInputData(pd@sampled, nth=pd@nth, logScaled = use_log, imageFormat = img_format)
-  error ()
-  n<-nrow(dimensionssample)
+  n<-nrow(dimensionsSample)
 
   BIC<-rep(0,end_cluster)
   #palette <- distinctColorPalette(end_cluster)
@@ -83,50 +82,14 @@ flowEMMi_sample<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
 
   for(c in start_cluster:end_cluster)
   {
-    print(paste0("Number of clusters: ",c))
     number_of_inits<-1
     ll[c][1]<-0
     counter<-2
     repeat
     {
       if(prior==FALSE){
-        iterateEM ()
+        iterateEM (deltaThreshold = 0.01, numClusters = c, flowDataObj = pd@sampled)
         error ()
-#        while(diff.tmp > diff.ll) {
-#          if(iterations==1){
-#            pi<-eigenMeanClusterProb(P_mat)
-#            start<-dimensionssample[sample(nrow(dimensionssample),size=c,replace=FALSE),]
-#            mu<-t(start)
-#            sigma<-eigenSigma(P_mat,mu,dimensionssample)
-#            T<-calc_T(pi,mu,sigma,dimensionssample)
-#            loglik[iterations+1] <- eigenLogLikelihood(T) #compute log likelihood
-#            ll[[c]][counter]<-loglik[iterations+1]
-#            if(iterations >= 2){
-#              diff.tmp <- abs(loglik[iterations+1]-loglik[iterations])
-#            }
-#            P_mat<-calc_Pmat(T)
-#              loglikelihood=loglik[iterations+1]
-#            it<-iterations
-#              iterations<-iterations+1
-#            counter<-counter+1
-#          }else{
-############# M-step
-#            pi<-eigenMeanClusterProb(P_mat)
-#            mu<-eigenMu(P_mat,dimensionssample)
-#            sigma<-eigenSigma(P_mat,mu,dimensionssample)
-#            T<-calc_T(pi,mu,sigma,dimensionssample)
-#            loglik[iterations+1] <- eigenLogLikelihood(T) #compute log likelihood
-#            ll[[c]][counter]<- loglik[iterations+1]
-#            if(iterations >= 2){
-#              diff.tmp <- abs(loglik[iterations+1]-loglik[iterations])
-#            }
-#            P_mat<-calc_Pmat(T)
-#              loglikelihood=loglik[iterations+1]
-#            it<-iterations
-#              iterations<-iterations+1
-#            counter<-counter+1
-#          }
-#        } # while diff.tmp > diff.ll
       }else if(prior==TRUE){
         number_of_inits<-max_inits
         loglik<- c()
