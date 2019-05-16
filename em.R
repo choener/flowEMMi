@@ -87,64 +87,18 @@ flowEMMi_sample<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
     counter<-2
     repeat
     {
-      if(prior==FALSE){
+      # for each initialization, run the algorithm
+      if (prior) {
+        # this variant assumes that we collected start points from somewhere else
+        # TODO re-use iterateEM ...
+      } else {
+        # this variant randomly selects start points for the EM algorithm
         iterateEM (deltaThreshold = 0.01, numClusters = c, flowDataObj = pd@sampled)
         error ()
-      }else if(prior==TRUE){
-        number_of_inits<-max_inits
-        loglik<- c()
-        loglik[1]<-0
-        iterations<-1
-        diff.tmp <- 1000  
-        while(diff.tmp > diff.ll) { 
-          print(iterations)
-          if(iterations==1){
-            pi<-pi_prior[[c]]
-            mu<-mu_prior[[c]]
-            sigma<-sigma_prior[[c]]
-            tic(msg="Build T[,m]")
-            T<-calc_T(pi,mu,sigma,dimensionssample)
-            toc()
-            tic(msg="Compute log-likelihood")
-            loglik[iterations+1] <- eigenLogLikelihood(T) #compute log likelihood
-            toc()
-            ll[[c]][counter]<-loglik[iterations+1]
-            tic(msg="Compute new P_mat")
-            P_mat<-calc_Pmat(T)
-            toc()
-            loglikelihood=loglik[iterations+1]
-            it<-iterations
-            iterations<-iterations+1
-            counter<-counter+1  
-          }else{
-            tic(msg="Calculate pi's")
-            pi<-eigenMeanClusterProb(P_mat)
-            toc()
-            tic(msg="calculate new mu")
-            mu<-eigenMu(P_mat,dimensionssample)
-            toc()
-            tic(msg="calculate new sigma")
-            sigma<-eigenSigma(P_mat,mu,dimensionssample)
-            toc()
-            tic("Calculate T")
-            T<-calc_T(pi,mu,sigma,dimensionssample)
-            toc()
-            tic(msg="Compute log-likelihood")
-            loglik[iterations+1] <- eigenLogLikelihood(T) #compute log likelihood
-            toc()
-            ll[[c]][counter]<-loglik[iterations+1]
-            diff.tmp <- abs(loglik[iterations+1]-loglik[iterations])
-            tic(msg="Compute new P_mat")
-            P_mat<-calc_Pmat(T)
-            toc()
-            loglikelihood=loglik[iterations+1]
-            it<-iterations
-            iterations<-iterations+1
-            counter<-counter+1
-          }
-        }
-      } #
+      }
+            #
             if(number_of_inits==1){
+              # stores the final init=1 values
               print("First initialization.")
               act_T[[c]]<-T
               act_P_mat[[c]]<-P_mat
@@ -157,7 +111,10 @@ flowEMMi_sample<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
               act_loglik[[c]]<-loglikelihood
               act_iterations[[c]]<-it
               print(paste0(it, " iterations."))
-              number_of_inits<-number_of_inits+1}else if(number_of_inits>=2 && number_of_inits<max_inits){
+              number_of_inits<-number_of_inits+1
+            }else if (number_of_inits>=2 && number_of_inits<max_inits)
+            {
+              # stores the final init>1 && init<max values
                 print(paste0(number_of_inits, ". initialization"))
                 if(loglikelihood>act_loglik[[c]]){
                   act_T[[c]]<-T
@@ -171,7 +128,9 @@ flowEMMi_sample<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                 }else{
                   print(paste0(it, " iterations."))
                 }
-                number_of_inits<-number_of_inits+1}else if(number_of_inits==max_inits){
+                number_of_inits<-number_of_inits+1
+            }else if(number_of_inits==max_inits)
+            {
                   if(prior==TRUE){
                     print("First initialization.")
                     act_T[[c]]<-T

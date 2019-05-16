@@ -65,7 +65,7 @@ mkFlowData <- function(nth=1, xChannel, yChannel, xMin, xMax, yMin, yMax, data)
 
 
 # a single run of the EM algorithm with a given number of clusters
-setClass (Class="EMRun", slots=c(mu="matrix", sigma="list", weight="matrix", logL="numeric"
+setClass (Class="EMRun", slots=c(mu="matrix", sigma="list", weight="matrix", clusterProbs="numeric", logL="numeric"
                                  ))
 mkEMRun <- function ()
 {
@@ -73,6 +73,7 @@ mkEMRun <- function ()
               , mu=matrix()
               , sigma=list()
               , weight=matrix()
+              , clusterProbs=0
               , logL=Inf
               ))
 }
@@ -80,7 +81,7 @@ mkEMRun <- function ()
 
 
 # include the newest mu, sigma, logL values in the EMRun
-updateEMRun <- function (em, mu, sigma, weight, logL)
+updateEMRun <- function (em, mu, sigma, weight, clusterProbs, logL)
 {
 #  n <- 1 + length (em@mu)
 #  # store old data
@@ -92,6 +93,7 @@ updateEMRun <- function (em, mu, sigma, weight, logL)
   em@mu <- mu
   em@sigma <- sigma
   em@weight <- weight
+  em@clusterProbs <- clusterProbs
   em@logL <- logL
   return (em)
 }

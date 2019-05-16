@@ -3,6 +3,8 @@
 # has reached a fixed point, if the log-likelihood does not improve
 # significantly anymore.
 
+library("tictoc")
+
 source("classes.R")
 
 sourceCpp(file = "./em_fast_sigma.cpp", cacheDir = "./.cacheDir")
@@ -12,9 +14,13 @@ sourceCpp(file = "./em_fast_sigma.cpp", cacheDir = "./.cacheDir")
 # run the EM until a fixed point is reached, requires the threshold for the LL
 # function, the number of clusters to try to fit, as well as the flow data
 # object, to work on.
+#
+# TODO have tictoc write to a file with additional information. Develop perf.R
+# module for this.
 
 iterateEM <- function (deltaThreshold, numClusters, flowDataObj)
 {
+  tic(msg="timing iterateEM")
   cat (sprintf("Starting EM with threshold %.4f threshold, %d clusters\n", deltaThreshold, numClusters))
   cat (sprintf("Iteration       Δ LL\n"))
   em <- emInit (numClusters = numClusters, flowDataObj = flowDataObj)
@@ -29,6 +35,7 @@ iterateEM <- function (deltaThreshold, numClusters, flowDataObj)
     cat (sprintf("%5d %14.4f\n", iteration, stepDelta))
     iteration <- iteration +1
   }
+  toc()
 }
 
 
@@ -77,6 +84,6 @@ emCommon <- function(em, flowDataObj, weight, mu)
   densities       <- eigenDensitiesAtSamples(clusterProbs ,mu,sigma,flowDataObj@data)
   logL            <- eigenLogLikelihood(densities) #compute log likelihood
   normedDensities <- eigenRowNormalize(densities)
-  return (updateEMRun(em=em, mu=mu, sigma=sigma, weight=normedDensities, logL=logL))
+  return (updateEMRun(em=em, mu=mu, sigma=sigma, weight=normedDensities, clusterProbs=clusterProbs, logL=logL))
 }
 
