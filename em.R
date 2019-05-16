@@ -80,6 +80,12 @@ flowEMMi_sample<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   ll<-list()
   newList<-list()
 
+  # TODO parallelization (but consider what exactly to parallelize)
+  #
+  # numCores <- detectCores() # -1
+  # cluster  <- makeCluster(numCores)
+  # parLapply (cluster, start_cluster:end_cluster, functionToCall)
+
   for(c in start_cluster:end_cluster)
   {
     number_of_inits<-1
