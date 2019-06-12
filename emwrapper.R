@@ -20,10 +20,33 @@ sourceCpp(file = "./em_fast_sigma.cpp", cacheDir = "./.cacheDir")
 
 iterateEM <- function (deltaThreshold, numClusters, flowDataObj)
 {
+  #tic(msg="timing iterateEM")
+  #cat (sprintf("Starting EM with threshold %.4f threshold, %d clusters\n", deltaThreshold, numClusters))
+  #cat (sprintf("Iteration       Δ LL\n"))
+  em <- emInit (numClusters = numClusters, flowDataObj = flowDataObj)
+  em <- iterateInitedEM (em=em, deltaThreshold=deltaThreshold, numCluster=numClusters, flowDataObj=flowDataObj)
+  #stepDelta <- Inf
+  #iteration <- 0
+  #while (stepDelta > deltaThreshold)
+  #{
+  #  prevLL <- em@logL
+  #  em <- emStep (em, flowDataObj)
+  #  curLL <- em@logL
+  #  stepDelta <- curLL - prevLL
+  #  cat (sprintf("%5d %14.4f\n", iteration, stepDelta))
+  #  iteration <- iteration +1
+  #}
+  #toc()
+  return (em)
+}
+
+
+
+iterateInitedEM <- function (em,deltaThreshold, numClusters, flowDataObj)
+{
   tic(msg="timing iterateEM")
   cat (sprintf("Starting EM with threshold %.4f threshold, %d clusters\n", deltaThreshold, numClusters))
   cat (sprintf("Iteration       Δ LL\n"))
-  em <- emInit (numClusters = numClusters, flowDataObj = flowDataObj)
   stepDelta <- Inf
   iteration <- 0
   while (stepDelta > deltaThreshold)
@@ -36,7 +59,10 @@ iterateEM <- function (deltaThreshold, numClusters, flowDataObj)
     iteration <- iteration +1
   }
   toc()
+  return (em)
 }
+
+
 
 
 

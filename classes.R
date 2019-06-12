@@ -18,12 +18,14 @@ limitsC <- function(l)
 
 
 # a data object, including its limits
-setClass (Class="FlowDataObject", slots=c(data="matrix", x="Limits", y="Limits"))
-mkFlowDataObject <- function(data, xChannel, yChannel)
+setClass (Class="FlowDataObject", slots=c(flowFrame="flowFrame", data="matrix", xChannel="character", yChannel="character", x="Limits", y="Limits"))
+mkFlowDataObject <- function(frame, xChannel, yChannel)
 {
+  data <- exprs(frame)
   xs <- data[,xChannel]
   ys <- data[,yChannel]
-  return(new("FlowDataObject", data=data, x=mkLimits(channel=xChannel,xs), y=mkLimits(channel=yChannel,ys)))
+  return(new("FlowDataObject", flowFrame=frame, data=data, xChannel=xChannel, yChannel=yChannel
+             , x=mkLimits(channel=xChannel,xs), y=mkLimits(channel=yChannel,ys)))
 }
 
 
@@ -39,25 +41,23 @@ setClass (Class="FlowData", slots=c(data="FlowDataObject", sampled="FlowDataObje
 # create flow data object, including correct subsampling, etc
 # fraction is the subsampling parameter, 0 < fraction <= 1
 # note that the "sampled" structure retains only two dimensions
-mkFlowData <- function(fraction=1.0, xChannel, yChannel, xMin, xMax, yMin, yMax, data)
+
+mkFractionedFlowData <- function(fdo, fraction=1.0, xMin, xMax, yMin, yMax)
 {
-  origData<-mkFlowDataObject(data=exprs(data), xChannel=xChannel, yChannel=yChannel)
-
   # prepare subset extraction without border machine noise
-  border <- list(c(xMin,xMax+origData@x@min), c(yMin,yMax+origData@y@min)) # define subset area
-  names(border) <- c(xChannel, yChannel)
+  border <- list(c(xMin,xMax+fdo@x@min), c(yMin,yMax+fdo@y@min)) # define subset area
+  names(border) <- c(fdo@xChannel, fdo@yChannel)
   denoised <- rectangleGate(filterId="Noise",  .gate = border) # filter noise
-  denoised.subset <- Subset(data, denoised)
-  denoisedData<-mkFlowDataObject(data=exprs(denoised.subset), xChannel=xChannel, yChannel=yChannel)
-
+  denoised.subset <- Subset(fdo@flowFrame, denoised)
+  denoisedData<-mkFlowDataObject(frame=denoised.subset, xChannel=fdo@xChannel, yChannel=fdo@yChannel)
   # subsample every nth element
-  vs<-cbind(denoisedData@data[,xChannel],denoisedData@data[,yChannel]) #both dimensions as matrix
+  vs<-cbind(denoisedData@data[,fdo@xChannel],denoisedData@data[,fdo@yChannel]) #both dimensions as matrix
   subsampled<-vs[sample(nrow(vs),size=nrow(vs) * fraction,replace=FALSE),]
-  colnames(subsampled) <- list(xChannel, yChannel)
+  colnames(subsampled) <- list(fdo@xChannel, fdo@yChannel)
 
   return (new("FlowData"
               , data=denoisedData
-              , sampled=mkFlowDataObject(data=subsampled, xChannel=xChannel, yChannel=yChannel)
+              , sampled=mkFlowDataObject(frame=subsampled, xChannel=fdo@xChannel, yChannel=fdo@yChannel)
               , fraction=fraction
               ))
 }
