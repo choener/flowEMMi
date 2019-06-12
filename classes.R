@@ -34,12 +34,12 @@ validFlowData <- function(object)
   #TODO we should check certain things
   TRUE
 }
-setClass (Class="FlowData", slots=c(data="FlowDataObject", sampled="FlowDataObject", nth="numeric"), validity=validFlowData)
+setClass (Class="FlowData", slots=c(data="FlowDataObject", sampled="FlowDataObject", fraction="numeric"), validity=validFlowData)
 
 # create flow data object, including correct subsampling, etc
-# "nth" is the subsampling parameters >= 1
+# fraction is the subsampling parameter, 0 < fraction <= 1
 # note that the "sampled" structure retains only two dimensions
-mkFlowData <- function(nth=1, xChannel, yChannel, xMin, xMax, yMin, yMax, data)
+mkFlowData <- function(fraction=1.0, xChannel, yChannel, xMin, xMax, yMin, yMax, data)
 {
   origData<-mkFlowDataObject(data=exprs(data), xChannel=xChannel, yChannel=yChannel)
 
@@ -52,13 +52,13 @@ mkFlowData <- function(nth=1, xChannel, yChannel, xMin, xMax, yMin, yMax, data)
 
   # subsample every nth element
   vs<-cbind(denoisedData@data[,xChannel],denoisedData@data[,yChannel]) #both dimensions as matrix
-  subsampled<-vs[sample(nrow(vs),size=nrow(vs)/nth,replace=FALSE),]
+  subsampled<-vs[sample(nrow(vs),size=nrow(vs) * fraction,replace=FALSE),]
   colnames(subsampled) <- list(xChannel, yChannel)
 
   return (new("FlowData"
               , data=denoisedData
               , sampled=mkFlowDataObject(data=subsampled, xChannel=xChannel, yChannel=yChannel)
-              , nth=nth
+              , fraction=fraction
               ))
 }
 

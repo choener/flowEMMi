@@ -29,7 +29,8 @@ parser <- add_option (parser, c ("--xstart"), type="integer", default = 1500, he
 parser <- add_option (parser, c ("--xend"), type="integer", default = 40000, help="")
 parser <- add_option (parser, c ("--ystart"), type="integer", default = 5000, help="")
 parser <- add_option (parser, c ("--yend"), type="integer", default = 38000, help="")
-parser <- add_option (parser, c ("--samples"), type="integer", default = 50, help="")
+parser <- add_option (parser, c ("--fraction"), type="double", default = 0.02, help="")
+parser <- add_option (parser, c ("--fracmult"), type="integer", default = 5, help="")
 parser <- add_option (parser, c ("--prior"), action = "store_true", default=FALSE, help="")
 parser <- add_option (parser, c ("--separation"), action = "store_true", default=FALSE, help="")
 parser <- add_option (parser, c ("--inits"), type="integer", default = 10, help="")
@@ -48,11 +49,15 @@ opts <- parse_args(parser)
 
 flowEMMi_sample<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                          , x_start=0, x_end=4095,y_start=700,y_end=4095
-                         ,use_log=TRUE,diff.ll=1,sample_size=10,start_cluster=8,end_cluster=15,prior=FALSE
+                         ,use_log=TRUE,diff.ll=1
+#                         ,sample_size=10
+                         ,fraction=0.02
+#                         ,fractmult=5.0
+                         ,start_cluster=8,end_cluster=15,prior=FALSE
                          ,pi_prior,mu_prior,sigma_prior,separation=TRUE,max_inits=5,total=FALSE,alpha=.05,img_format="png",verbose=TRUE)
 {
   mat<-exprs(frame)
-  pd <- mkFlowData(nth = sample_size
+  pd <- mkFlowData(fraction = fraction # nth = sample_size
                    , xChannel=ch1, yChannel=ch2
                    , xMin=x_start, xMax=x_end
                    , yMin=y_start, yMax=y_end
@@ -60,7 +65,7 @@ flowEMMi_sample<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   dimensions <- pd@data
   dimensionsSample <- pd@sampled
 
-  plotInputData(pd@sampled, nth=pd@nth, logScaled = use_log, imageFormat = img_format)
+  plotInputData(pd@sampled, fraction=pd@fraction, logScaled = use_log, imageFormat = img_format)
   n<-nrow(dimensionsSample)
 
   BIC<-rep(0,end_cluster)
@@ -346,7 +351,8 @@ fcsData <- read.FCS(opts$file,alter.names = TRUE,transformation = FALSE)
 results <- flowEMMi_sample( frame = fcsData
                           , ch1=opts$channelx, ch2=opts$channely
                           , x_start = opts$xstart, x_end = opts$xend, y_start=opts$ystart, y_end=opts$yend
-                          , sample_size = opts$samples
+                          , fraction = opts$fraction
+#                          , fracmult = opts$fracmult
                           , prior = opts$prior
                           , separation = opts$separation
                           , max_inits = opts$inits
