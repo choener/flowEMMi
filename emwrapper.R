@@ -18,13 +18,13 @@ sourceCpp(file = "./em_fast_sigma.cpp", cacheDir = "./.cacheDir")
 # TODO have tictoc write to a file with additional information. Develop perf.R
 # module for this.
 
-iterateEM <- function (deltaThreshold, numClusters, flowDataObj)
+iterateEM <- function (deltaThreshold, numClusters, flowData)
 {
   #tic(msg="timing iterateEM")
   #cat (sprintf("Starting EM with threshold %.4f threshold, %d clusters\n", deltaThreshold, numClusters))
   #cat (sprintf("Iteration       Δ LL\n"))
-  em <- emInit (numClusters = numClusters, flowDataObj = flowDataObj)
-  em <- iterateInitedEM (em=em, deltaThreshold=deltaThreshold, numCluster=numClusters, flowDataObj=flowDataObj)
+  em <- emInit (numClusters = numClusters, flowData = flowData)
+  em <- iterateInitedEM (em=em, deltaThreshold=deltaThreshold, numCluster=numClusters, flowData=flowData)
   #stepDelta <- Inf
   #iteration <- 0
   #while (stepDelta > deltaThreshold)
@@ -42,7 +42,7 @@ iterateEM <- function (deltaThreshold, numClusters, flowDataObj)
 
 
 
-iterateInitedEM <- function (em,deltaThreshold, numClusters, flowDataObj)
+iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData)
 {
   tic(msg="timing iterateEM")
   cat (sprintf("Starting EM with threshold %.4f threshold, %d clusters\n", deltaThreshold, numClusters))
@@ -52,7 +52,7 @@ iterateInitedEM <- function (em,deltaThreshold, numClusters, flowDataObj)
   while (stepDelta > deltaThreshold)
   {
     prevLL <- em@logL
-    em <- emStep (em, flowDataObj)
+    em <- emStep (em, flowData)
     curLL <- em@logL
     stepDelta <- curLL - prevLL
     cat (sprintf("%5d %14.4f\n", iteration, stepDelta))
@@ -68,46 +68,46 @@ iterateInitedEM <- function (em,deltaThreshold, numClusters, flowDataObj)
 
 # the first EM step to set everything up
 
-emInit <- function (numClusters, flowDataObj)
+emInit <- function (numClusters, flowData)
 {
   em <- mkEMRun()
   # draw random pi weights, for each row (data point), and each cluster, draw a
   # dirichlet-distributed weight.
-  sampleClusterWeight <- rdirichlet(nrow(flowDataObj@data),rep(1,numClusters))
+  sampleClusterWeight <- rdirichlet(nrow(flowData@sampled),rep(1,numClusters))
   # draw random start positions from the given data points
-  start<-flowDataObj@data[sample(nrow(flowDataObj@data),size=numClusters,replace=FALSE),]
+  start<-flowData@sampled[sample(nrow(flowData@sampled),size=numClusters,replace=FALSE),]
   # transpose... (rows: dimensions (2), named; cols: clusters(numClusters))
   # PMT.1 2000 2300 ...
   # PMT.9 4000 9000 ...
   mu<-t(start)
   # run the common part of the em algorithm
-  return (emCommon(em, flowDataObj, sampleClusterWeight, mu))
+  return (emCommon(em, flowData, sampleClusterWeight, mu))
 }
 
 
 
 # a single EM step
 
-emStep <- function (em,flowDataObj)
+emStep <- function (em,flowData)
 {
   # calculate mu based on cluster-weight for each data point, and actual data
   # points
-  mu<-eigenMu(em@weight,flowDataObj@data)
-  return (emCommon(em, flowDataObj, em@weight, mu))
+  mu<-eigenMu(em@weight,flowData@sampled)
+  return (emCommon(em, flowData, em@weight, mu))
 }
 
 
 
 # shared between init/step
 
-emCommon <- function(em, flowDataObj, weight, mu)
+emCommon <- function(em, flowData, weight, mu)
 {
   # average cluster probability, averaged over all samples
   clusterProbs    <- eigenMeanClusterProb(weight)
   # calculate the sample covariance matrices, one for each cluster, as
   # sigma[1]...sigma[n]
-  sigma           <- eigenSigma(weight,mu,flowDataObj@data)
-  densities       <- eigenDensitiesAtSamples(clusterProbs ,mu,sigma,flowDataObj@data)
+  sigma           <- eigenSigma(weight,mu,flowData@sampled)
+  densities       <- eigenDensitiesAtSamples(clusterProbs ,mu,sigma,flowData@sampled)
   logL            <- eigenLogLikelihood(densities) #compute log likelihood
   normedDensities <- eigenRowNormalize(densities)
   return (updateEMRun(em=em, mu=mu, sigma=sigma, weight=normedDensities, clusterProbs=clusterProbs, logL=logL))

@@ -44,95 +44,109 @@ opts <- parse_args(parser)
 
 
 
+# run the sampled algorithm
 
-# run the sampling function
 
-flowEMMi_sample<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
+# run the complete flowEMMi algorithm
+
+flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                          , x_start=0, x_end=4095,y_start=700,y_end=4095
                          ,use_log=TRUE,diff.ll=1
                          ,fraction=0.02
-                         ,fractmult=5
+                         ,fracmult=5
                          ,start_cluster=8,end_cluster=15,prior=FALSE
                          ,pi_prior,mu_prior,sigma_prior,separation=TRUE,max_inits=5,total=FALSE,alpha=.05,img_format="png",verbose=TRUE)
 {
   #mat<-exprs(frame)
+  stopifnot (fraction > 0.0)
+  stopifnot (fracmult > 1.0)
 
   # the full flow data
   fdo <- mkFlowDataObject(frame=frame,xChannel=ch1, yChannel=ch2)
 
-  pd <- mkFractionedFlowData (fdo=fdo
-                             ,fraction = fraction
-                             ,xMin=x_start, xMax=x_end
-                             ,yMin=y_start, yMax=y_end)
-  dimensions <- pd@data
-  dimensionsSample <- pd@sampled
-
-  plotInputData(pd@sampled, fraction=pd@fraction, logScaled = use_log, imageFormat = img_format)
-  n<-nrow(dimensionsSample)
-
-  BIC<-rep(0,end_cluster)
-  #palette <- distinctColorPalette(end_cluster)
-  palette <- wheel ("steelblue", num = end_cluster)
-  act_T<-list()
-  act_P_mat<-list()
-  act_pi<-list()
-  pis<-list()
-  act_mu<-list()
-  mus<-list()
-  act_sigma<-list()
-  sigmas<-list()
-  act_loglik<-list()
-  act_iterations<-list()
-  probs<-list()
-  ll<-list()
-  newList<-list()
-
-  # TODO parallelization (but consider what exactly to parallelize)
-  #
-  # numCores <- detectCores() # -1
-  # cluster  <- makeCluster(numCores)
-  # parLapply (cluster, start_cluster:end_cluster, functionToCall)
-
-  for(c in start_cluster:end_cluster)
-  {
-    #ll[c][1]<-0
-    #counter<-2
-    for (iteration in 1:max_inits)
-    {
-      # initialize the EM with lowest count of elements
-      em <- iterateEM (deltaThreshold = 0.01, numClusters = c, flowDataObj = pd@sampled)
-      # increase element count
-      # for each initialization, run the algorithm
-      if (prior) {
-        # this variant assumes that we collected start points from somewhere else
-        # TODO re-use iterateEM ...
-      } else {
-        # this variant randomly selects start points for the EM algorithm
-      }
-    } # initiations
-  } # for start_cluster ... end_cluster
-  plotBIC (newList$BIC)
-  statBIC (newList$BIC)
-  for(c in start_cluster:end_cluster)
-  {
-    statCluster(newList$mu[[c]], newList$sigma[[c]])
+  # produce the vector of fractions, we want to run the algorithm with
+  fractions <- c(fraction)
+  repeat {
+    l <- tail(fractions,n=1)
+    if (l>=1) break
+    fractions <- c(fractions, min(1.0, l * fracmult))
   }
-} # flowEMMi_sample
+
+  # for each fraction, run the flowEMMi algorithm
+  for (f in fractions)
+  {
+    pd <- mkFractionedFlowData (fdo=fdo
+                               ,fraction = f
+                               ,xMin=x_start, xMax=x_end
+                               ,yMin=y_start, yMax=y_end)
+
+    plotInputData(pd, logScaled = use_log, imageFormat = img_format)
+    #n<-nrow(pd@sampled)
+
+    BIC<-rep(0,end_cluster)
+    #palette <- distinctColorPalette(end_cluster)
+    palette <- wheel ("steelblue", num = end_cluster)
+    act_T<-list()
+    act_P_mat<-list()
+    act_pi<-list()
+    pis<-list()
+    act_mu<-list()
+    mus<-list()
+    act_sigma<-list()
+    sigmas<-list()
+    act_loglik<-list()
+    act_iterations<-list()
+    probs<-list()
+    ll<-list()
+    newList<-list()
+
+    # TODO parallelization (but consider what exactly to parallelize)
+    #
+    # numCores <- detectCores() # -1
+    # cluster  <- makeCluster(numCores)
+    # parLapply (cluster, start_cluster:end_cluster, functionToCall)
+
+    for(c in start_cluster:end_cluster)
+    {
+      #ll[c][1]<-0
+      #counter<-2
+      for (iteration in 1:max_inits)
+      {
+        # initialize the EM with lowest count of elements
+        em <- iterateEM (deltaThreshold = 0.01, numClusters = c, flowData = pd)
+        # increase element count
+        # for each initialization, run the algorithm
+        if (prior) {
+          # this variant assumes that we collected start points from somewhere else
+          # TODO re-use iterateEM ...
+        } else {
+          # this variant randomly selects start points for the EM algorithm
+        }
+      } # initiations
+    } # for start_cluster ... end_cluster
+    plotBIC (newList$BIC)
+    statBIC (newList$BIC)
+    for(c in start_cluster:end_cluster)
+    {
+      statCluster(newList$mu[[c]], newList$sigma[[c]])
+    }
+  } # for f in fractions
+} # flowEMMi
 
 
 # load sample
 fcsData <- read.FCS(opts$file,alter.names = TRUE,transformation = FALSE)
 # run actual flowEMMi algorithm
-results <- flowEMMi_sample( frame = fcsData
-                          , ch1=opts$channelx, ch2=opts$channely
-                          , x_start = opts$xstart, x_end = opts$xend, y_start=opts$ystart, y_end=opts$yend
-                          , fraction = opts$fraction
-#                          , fracmult = opts$fracmult
-                          , prior = opts$prior
-                          , separation = opts$separation
-                          , max_inits = opts$inits
-                          , use_log = opts$log
-                          , alpha = opts$alpha, img_format = opts$imgformat
-                          , start_cluster = opts$startcluster, end_cluster = opts$endcluster
-                          )
+results <- flowEMMi( frame = fcsData
+                   , ch1=opts$channelx, ch2=opts$channely
+                   , x_start = opts$xstart, x_end = opts$xend, y_start=opts$ystart, y_end=opts$yend
+                   , fraction = opts$fraction
+                   , fracmult = opts$fracmult
+                   , prior = opts$prior
+                   , separation = opts$separation
+                   , max_inits = opts$inits
+                   , use_log = opts$log
+                   , alpha = opts$alpha, img_format = opts$imgformat
+                   , start_cluster = opts$startcluster, end_cluster = opts$endcluster
+                   )
 

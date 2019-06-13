@@ -36,11 +36,13 @@ validFlowData <- function(object)
   #TODO we should check certain things
   TRUE
 }
-setClass (Class="FlowData", slots=c(data="FlowDataObject", sampled="FlowDataObject", fraction="numeric"), validity=validFlowData)
+setClass (Class="FlowData", slots=c(data="FlowDataObject", sampled="matrix", fraction="numeric"), validity=validFlowData)
 
 # create flow data object, including correct subsampling, etc
 # fraction is the subsampling parameter, 0 < fraction <= 1
 # note that the "sampled" structure retains only two dimensions
+
+# TODO move denoised in own function, used by mkFlowDataObject
 
 mkFractionedFlowData <- function(fdo, fraction=1.0, xMin, xMax, yMin, yMax)
 {
@@ -57,7 +59,7 @@ mkFractionedFlowData <- function(fdo, fraction=1.0, xMin, xMax, yMin, yMax)
 
   return (new("FlowData"
               , data=denoisedData
-              , sampled=mkFlowDataObject(frame=subsampled, xChannel=fdo@xChannel, yChannel=fdo@yChannel)
+              , sampled=subsampled
               , fraction=fraction
               ))
 }
