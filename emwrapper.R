@@ -20,23 +20,8 @@ sourceCpp(file = "./em_fast_sigma.cpp", cacheDir = "./.cacheDir")
 
 iterateEM <- function (deltaThreshold, numClusters, flowData)
 {
-  #tic(msg="timing iterateEM")
-  #cat (sprintf("Starting EM with threshold %.4f threshold, %d clusters\n", deltaThreshold, numClusters))
-  #cat (sprintf("Iteration       Δ LL\n"))
   em <- emInit (numClusters = numClusters, flowData = flowData)
   em <- iterateInitedEM (em=em, deltaThreshold=deltaThreshold, numCluster=numClusters, flowData=flowData)
-  #stepDelta <- Inf
-  #iteration <- 0
-  #while (stepDelta > deltaThreshold)
-  #{
-  #  prevLL <- em@logL
-  #  em <- emStep (em, flowDataObj)
-  #  curLL <- em@logL
-  #  stepDelta <- curLL - prevLL
-  #  cat (sprintf("%5d %14.4f\n", iteration, stepDelta))
-  #  iteration <- iteration +1
-  #}
-  #toc()
   return (em)
 }
 
@@ -55,7 +40,10 @@ iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData)
     em <- emStep (em, flowData)
     curLL <- em@logL
     stepDelta <- curLL - prevLL
-    cat (sprintf("%5d %14.4f\n", iteration, stepDelta))
+    ws_ <- c(em@clusterProbs, 0, 0, 0)
+    weights <-sprintf("%4.3f %4.3f %4.3f ...",ws_[1], ws_[2], ws_[3])
+    poss <- "" # sprintf("%020s", toString (em@mu))
+    cat (sprintf("%5d %14.4f    %s %s\n", iteration, stepDelta, weights, poss))
     iteration <- iteration +1
   }
   toc()
@@ -82,6 +70,16 @@ emInit <- function (numClusters, flowData)
   mu<-t(start)
   # run the common part of the em algorithm
   return (emCommon(em, flowData, sampleClusterWeight, mu))
+}
+
+
+
+# initialize from prior em
+
+emInitWithPrior <- function (emOld, flowData)
+{
+  em <- mkEMRun()
+  return (emCommon(em, flowData, emOld@weight, emOld@mu))
 }
 
 

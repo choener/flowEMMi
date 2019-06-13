@@ -1,4 +1,6 @@
 
+library("tictoc")
+
 # limits
 setClass (Class="Limits", slots=c(channel="character", min="numeric", max="numeric"))
 
@@ -46,6 +48,7 @@ setClass (Class="FlowData", slots=c(data="FlowDataObject", sampled="matrix", fra
 
 mkFractionedFlowData <- function(fdo, fraction=1.0, xMin, xMax, yMin, yMax)
 {
+  tic(msg="mkFractionedFlowData")
   # prepare subset extraction without border machine noise
   border <- list(c(xMin,xMax+fdo@x@min), c(yMin,yMax+fdo@y@min)) # define subset area
   names(border) <- c(fdo@xChannel, fdo@yChannel)
@@ -56,6 +59,7 @@ mkFractionedFlowData <- function(fdo, fraction=1.0, xMin, xMax, yMin, yMax)
   vs<-cbind(denoisedData@data[,fdo@xChannel],denoisedData@data[,fdo@yChannel]) #both dimensions as matrix
   subsampled<-vs[sample(nrow(vs),size=nrow(vs) * fraction,replace=FALSE),]
   colnames(subsampled) <- list(fdo@xChannel, fdo@yChannel)
+  toc()
 
   return (new("FlowData"
               , data=denoisedData

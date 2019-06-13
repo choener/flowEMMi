@@ -5,6 +5,7 @@
 # TODO modify sourceCpp to includes the full directory we are in
 # TODO consider using rPackages.littler
 
+library (colortools)
 library (flowCore)
 library (flowViz)
 library (ggplot2)
@@ -12,8 +13,9 @@ library (gtools)
 library (mixtools)
 library (mvtnorm)
 library (optparse)
-library (colortools)
+library (parallel)
 library (Rcpp)
+library (tictoc)
 
 source("classes.R")
 source("plotting.R")
@@ -29,8 +31,7 @@ parser <- add_option (parser, c ("--xstart"), type="integer", default = 1500, he
 parser <- add_option (parser, c ("--xend"), type="integer", default = 40000, help="")
 parser <- add_option (parser, c ("--ystart"), type="integer", default = 5000, help="")
 parser <- add_option (parser, c ("--yend"), type="integer", default = 38000, help="")
-parser <- add_option (parser, c ("--fraction"), type="double", default = 0.02, help="")
-parser <- add_option (parser, c ("--fracmult"), type="integer", default = 5, help="")
+parser <- add_option (parser, c ("--initfraction"), type="double", default = 0.02, help="")
 parser <- add_option (parser, c ("--prior"), action = "store_true", default=FALSE, help="")
 parser <- add_option (parser, c ("--separation"), action = "store_true", default=FALSE, help="")
 parser <- add_option (parser, c ("--inits"), type="integer", default = 10, help="")
@@ -46,31 +47,42 @@ opts <- parse_args(parser)
 
 # run the sampled algorithm
 #
-# Will, for a given number of clusters, start with the lowest fraction, find
-# the EM-best cluster positions, then restart with higher fraction until all
-# data have been used.
+# Finds for a given number of clusters the best initialization based on
+# log-likelihood.
 
-flowEMMiSingle<-function ( flowDataObject, fractions, numClusters, useLogScale, imageFormat, xMin, xMax, yMin, yMax)
+flowEMMiSampled<-function ( flowDataObject, initFraction, inits, numClusters, useLogScale, imageFormat, xMin, xMax, yMin, yMax)
 {
-  first<-TRUE
-  em<-c()
-  for (f in fractions)
+  em<-NULL
+  # run inits with fraction of points
+  for (i in 1:inits)
   {
     pd <- mkFractionedFlowData (fdo=flowDataObject
-                               ,fraction = f
+                               ,fraction = initFraction
                                ,xMin=xMin, xMax=xMax
                                ,yMin=yMin, yMax=yMax)
-    plotInputData(pd, logScaled = useLogScale, imageFormat = imageFormat)
-    if (first)
+    em_ <- iterateEM (deltaThreshold = 0.01, numClusters=numClusters, flowData = pd)
+    if (is.null(em) || em@logL < em_@logL)
     {
-      em <- iterateEM (deltaThreshold = 0.01, numClusters=numClusters, flowData = pd)
-      first<-FALSE
-    } else
-    {
-      em@logL <- -Inf
-      em <- iterateInitedEM(em=em, deltaThreshold=0.01, numClusters=numClusters, flowData=pd)
-    } # if(first)
-  }
+      em <- em_
+      #tic(msg="plotting input data")
+      #plotInputData(pd, logScaled = useLogScale, imageFormat = imageFormat)
+      #toc()
+    }
+  } # i in inits
+  return (em)
+}
+
+# Run the flowEMMi algorithm on the full input data.
+
+flowEMMiFull<-function ( em, flowDataObject, numClusters, useLogScale, imageFormat, xMin, xMax, yMin, yMax, ...)
+{
+  pd <- mkFractionedFlowData (fdo=flowDataObject
+                             ,fraction = 1.0
+                             ,xMin=xMin, xMax=xMax
+                             ,yMin=yMin, yMax=yMax)
+  em <- emInitWithPrior (em=em, flowData=pd)
+  em <- iterateInitedEM(em=em, deltaThreshold=0.01, numClusters=numClusters, flowData=pd)
+  return (em)
 }
 
 # run the complete flowEMMi algorithm
@@ -78,29 +90,58 @@ flowEMMiSingle<-function ( flowDataObject, fractions, numClusters, useLogScale, 
 flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                          , xMin=0, xMax=4095,yMin=700,yMax=4095
                          ,useLogScale=TRUE,diff.ll=1
-                         ,fraction=0.02
-                         ,fracmult=5
+                         ,initFraction=0.02
                          ,minClusters=8,maxClusters=15,prior=FALSE
-                         ,pi_prior,mu_prior,sigma_prior,separation=TRUE,max_inits=5,total=FALSE,alpha=.05,imageFormat="png",verbose=TRUE)
+                         ,pi_prior,mu_prior,sigma_prior,separation=TRUE,numberOfInits=5,total=FALSE,alpha=.05,imageFormat="png",verbose=TRUE)
 {
   #mat<-exprs(frame)
-  stopifnot (fraction > 0.0)
-  stopifnot (fracmult > 1.0)
+  stopifnot (initFraction >  0.0)
 
   # the full flow data
   fdo <- mkFlowDataObject(frame=frame,xChannel=ch1, yChannel=ch2)
 
-  # produce the vector of fractions, we want to run the algorithm with
-  fractions <- c(fraction)
-  repeat {
-    l <- tail(fractions,n=1)
-    if (l>=1) break
-    fractions <- c(fractions, min(1.0, l * fracmult))
+  # setup parallelism
+  # numCores <- detectCores() # -1
+  # cluster  <- makeCluster(numCores, type="FORK")
+
+  # run for each number of clusters
+  parSampled <- function (c)
+  {
+    em <- flowEMMiSampled( flowDataObject=fdo, initFraction=initFraction, inits=numberOfInits
+                         , numClusters=c, useLogScale=useLogScale, imageFormat=imageFormat
+                         , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax)
+    return (em)
   }
-  flowEMMiSingle( flowDataObject=fdo, fractions=fractions
-                 , numClusters=minClusters, useLogScale=useLogScale, imageFormat=imageFormat
-                 , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax)
-  error()
+  ems<-lapply (minClusters:maxClusters, parSampled)
+
+  # find best number of clusters
+  bestLL <-NULL
+  for (b in 1:length(ems))
+  {
+    if (is.null(bestLL) || ems[[bestLL]]@logL < ems[[b]]@logL)
+    {
+      bestLL <- b
+    }
+  }
+
+  # around best number of clusters, run flowEMMi again
+  parFull <- function (c)
+  {
+    idx<-c-max(minClusters,bestLL-3)+1
+    em_<-ems[[idx]]
+    em <- flowEMMiFull( em=em_, flowDataObject=fdo,
+                      , numClusters=c, useLogScale=useLogScale, imageFormat=imageFormat
+                      , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax)
+    return (em)
+  }
+  emsFull<-lapply (max(minClusters,bestLL-3):min(maxClusters,bestLL+3), parFull)
+
+  error ()
+
+  #for (c in minClusters:maxClusters)
+  #{
+  #  parFunc (c)
+  #} # for c in clusters
 
   # for each fraction, run the flowEMMi algorithm
   for (f in fractions)
@@ -138,7 +179,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
     {
       #ll[c][1]<-0
       #counter<-2
-      for (iteration in 1:max_inits)
+      for (iteration in 1:numberOfInits)
       {
         # initialize the EM with lowest count of elements
         em <- iterateEM (deltaThreshold = 0.01, numClusters = c, flowData = pd)
@@ -168,11 +209,10 @@ fcsData <- read.FCS(opts$file,alter.names = TRUE,transformation = FALSE)
 results <- flowEMMi( frame = fcsData
                    , ch1=opts$channelx, ch2=opts$channely
                    , xMin = opts$xstart, xMax = opts$xend, yMin=opts$ystart, yMax=opts$yend
-                   , fraction = opts$fraction
-                   , fracmult = opts$fracmult
+                   , initFraction = opts$initfraction
                    , prior = opts$prior
                    , separation = opts$separation
-                   , max_inits = opts$inits
+                   , numberOfInits = opts$inits
                    , useLogScale = opts$log
                    , alpha = opts$alpha, imageFormat = opts$imgformat
                    , minClusters = opts$startcluster, maxClusters = opts$endcluster
