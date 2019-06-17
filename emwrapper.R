@@ -37,7 +37,11 @@ iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData)
   while (stepDelta > deltaThreshold)
   {
     prevLL <- em@logL
-    em <- emStep (em, flowData)
+    emNew <- emStep (em, flowData)
+    if (! (is.nan(emNew@logL)))
+    {
+      em<-emNew
+    }
     curLL <- em@logL
     stepDelta <- curLL - prevLL
     ws_ <- c(em@clusterProbs, 0, 0, 0)

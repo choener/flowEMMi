@@ -31,6 +31,7 @@ parser <- add_option (parser, c ("--xstart"), type="integer", default = 1500, he
 parser <- add_option (parser, c ("--xend"), type="integer", default = 40000, help="")
 parser <- add_option (parser, c ("--ystart"), type="integer", default = 5000, help="")
 parser <- add_option (parser, c ("--yend"), type="integer", default = 38000, help="")
+parser <- add_option (parser, c ("--convergence"), type="double", default = 0.01, help="")
 parser <- add_option (parser, c ("--initfraction"), type="double", default = 0.02, help="")
 parser <- add_option (parser, c ("--prior"), action = "store_true", default=FALSE, help="")
 parser <- add_option (parser, c ("--separation"), action = "store_true", default=FALSE, help="")
@@ -38,8 +39,10 @@ parser <- add_option (parser, c ("--inits"), type="integer", default = 10, help=
 parser <- add_option (parser, c ("--log"), action = "store_true", default=FALSE, help="")
 parser <- add_option (parser, c ("--alpha"), type="double", default = 0.5, help="")
 parser <- add_option (parser, c ("--imgformat"), type="character", default = "png", help="")
-parser <- add_option (parser, c ("--startcluster"), type="integer", default = 2, help="")
-parser <- add_option (parser, c ("--endcluster"), type="integer", default = 20, help="")
+parser <- add_option (parser, c ("--mincluster"), type="integer", default = 2, help="")
+parser <- add_option (parser, c ("--maxcluster"), type="integer", default = 20, help="")
+parser <- add_option (parser, c ("--clusterbracket"), type="integer", default = 3, help="")
+parser <- add_option (parser, c ("--disableparallelism"), action="store_true", default = FALSE, help="")
 
 opts <- parse_args(parser)
 
@@ -50,7 +53,7 @@ opts <- parse_args(parser)
 # Finds for a given number of clusters the best initialization based on
 # log-likelihood.
 
-flowEMMiSampled<-function ( flowDataObject, initFraction, inits, numClusters, useLogScale, imageFormat, xMin, xMax, yMin, yMax)
+flowEMMiSampled<-function ( flowDataObject, initFraction, inits, numClusters, useLogScale, imageFormat, xMin, xMax, yMin, yMax, epsilon)
 {
   em<-NULL
   # run inits with fraction of points
@@ -60,7 +63,7 @@ flowEMMiSampled<-function ( flowDataObject, initFraction, inits, numClusters, us
                                ,fraction = initFraction
                                ,xMin=xMin, xMax=xMax
                                ,yMin=yMin, yMax=yMax)
-    em_ <- iterateEM (deltaThreshold = 0.01, numClusters=numClusters, flowData = pd)
+    em_ <- iterateEM (deltaThreshold = epsilon, numClusters=numClusters, flowData = pd)
     if (is.null(em) || em@logL < em_@logL)
     {
       em <- em_
@@ -74,14 +77,14 @@ flowEMMiSampled<-function ( flowDataObject, initFraction, inits, numClusters, us
 
 # Run the flowEMMi algorithm on the full input data.
 
-flowEMMiFull<-function ( em, flowDataObject, numClusters, useLogScale, imageFormat, xMin, xMax, yMin, yMax, ...)
+flowEMMiFull<-function ( em, flowDataObject, numClusters, useLogScale, imageFormat, xMin, xMax, yMin, yMax, epsilon, ...)
 {
   pd <- mkFractionedFlowData (fdo=flowDataObject
                              ,fraction = 1.0
                              ,xMin=xMin, xMax=xMax
                              ,yMin=yMin, yMax=yMax)
   em <- emInitWithPrior (em=em, flowData=pd)
-  em <- iterateInitedEM(em=em, deltaThreshold=0.01, numClusters=numClusters, flowData=pd)
+  em <- iterateInitedEM(em=em, deltaThreshold=epsilon, numClusters=numClusters, flowData=pd)
   return (em)
 }
 
@@ -91,8 +94,11 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                          , xMin=0, xMax=4095,yMin=700,yMax=4095
                          ,useLogScale=TRUE,diff.ll=1
                          ,initFraction=0.02
-                         ,minClusters=8,maxClusters=15,prior=FALSE
-                         ,pi_prior,mu_prior,sigma_prior,separation=TRUE,numberOfInits=5,total=FALSE,alpha=.05,imageFormat="png",verbose=TRUE)
+                         ,minClusters=8,maxClusters=15,clusterbracket=3
+                         ,prior=FALSE
+                         ,pi_prior,mu_prior,sigma_prior,separation=TRUE,numberOfInits=5,total=FALSE,alpha=.05,imageFormat="png",verbose=TRUE
+                         ,disableParallelism=FALSE
+                         ,convergenceEpsilon=0.01 )
 {
   #mat<-exprs(frame)
   stopifnot (initFraction >  0.0)
@@ -101,18 +107,18 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   fdo <- mkFlowDataObject(frame=frame,xChannel=ch1, yChannel=ch2)
 
   # setup parallelism
-  # numCores <- detectCores() # -1
-  # cluster  <- makeCluster(numCores, type="FORK")
+  numCores <- if (disableParallelism) {1} else {detectCores()}
 
   # run for each number of clusters
   parSampled <- function (c)
   {
     em <- flowEMMiSampled( flowDataObject=fdo, initFraction=initFraction, inits=numberOfInits
                          , numClusters=c, useLogScale=useLogScale, imageFormat=imageFormat
-                         , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax)
+                         , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
+                         , epsilon=convergenceEpsilon)
     return (em)
   }
-  ems<-lapply (minClusters:maxClusters, parSampled)
+  ems<-mclapply (minClusters:maxClusters, parSampled, mc.cores=numCores)
 
   # find best number of clusters
   bestLL <-NULL
@@ -127,14 +133,16 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   # around best number of clusters, run flowEMMi again
   parFull <- function (c)
   {
-    idx<-c-max(minClusters,bestLL-3)+1
+    idx<-c-max(minClusters,bestLL-clusterbracket)+1
     em_<-ems[[idx]]
     em <- flowEMMiFull( em=em_, flowDataObject=fdo,
                       , numClusters=c, useLogScale=useLogScale, imageFormat=imageFormat
-                      , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax)
+                      , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
+                      , epsilon=convergenceEpsilon
+                      )
     return (em)
   }
-  emsFull<-lapply (max(minClusters,bestLL-3):min(maxClusters,bestLL+3), parFull)
+  emsFull<-mclapply (max(minClusters,bestLL-clusterbracket):min(maxClusters,bestLL+clusterbracket), parFull, mc.cores=numCores)
 
   error ()
 
@@ -215,6 +223,8 @@ results <- flowEMMi( frame = fcsData
                    , numberOfInits = opts$inits
                    , useLogScale = opts$log
                    , alpha = opts$alpha, imageFormat = opts$imgformat
-                   , minClusters = opts$startcluster, maxClusters = opts$endcluster
+                   , minClusters = opts$mincluster, maxClusters = opts$maxcluster, clusterbracket=opts$clusterbracket
+                   , disableParallelism = opts$disableparallelism
+                   , convergenceEpsilon = opts$convergence
                    )
 

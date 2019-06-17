@@ -4,7 +4,7 @@
 with import <nixpkgs> {};
 let
   # what we need for our system
-  rPemmi = with rPackages; [ Rcpp RcppEigen optparse flowCore flowViz ggplot2 gtools ellipse mixtools mvtnorm colortools tictoc parallel ];
+  rPemmi = with rPackages; [ Rcpp RcppEigen optparse flowCore flowViz ggplot2 gtools ellipse mixtools mvtnorm colortools tictoc parallel snow Rmpi ];
 
   # packages to compare against
   rFlowMerge = with rPackages;
