@@ -106,6 +106,9 @@ png(file="flowmerge_merged_solution.png", bg = "white", width = 12, height = 12,
 plot(flowClust.mergeopt,level=0.75,pch=20,main="Merged Solution");
 dev.off()
 
+write (flowClust.mergeopt@mu, file="flowcust-mu.dat")
+write (flowClust.mergeopt@sigma, file="flowcust-sigma.dat")
+
 print(flowClust.mergeopt@mu)
 print(flowClust.mergeopt@sigma)
 
