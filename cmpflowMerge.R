@@ -90,7 +90,23 @@ dev.off()
 
 flowClust.maxBIC<-flowClust.res[[which.max(BIC(flowClust.res))]]
 flowClust.flowobj<-flowObj(flowClust.maxBIC,fcsData);
-flowClust.merge<-merge(flowClust.flowobj,metric="entropy");
+flowClust.merge<-merge(flowClust.flowobj,metric="entropy")
+i<-fitPiecewiseLinreg(flowClust.merge)
+flowClust.mergeopt<-flowClust.merge[[i]]
 
+png(file="flowmerge_maxbic_solution.png", bg = "white", width = 12, height = 12, units = 'in', res = 300, pointsize=2)
+plot(flowClust.res[[4]], data=fcsData, main="Max BIC solution")
+dev.off()
+
+png(file="flowmerge_maxicl_solution.png", bg = "white", width = 12, height = 12, units = 'in', res = 300, pointsize=2)
+plot(flowClust.res[[which.max(flowMerge:::ICL(flowClust.res))]],data=fcsData,main="Max ICL solution");
+dev.off()
+
+png(file="flowmerge_merged_solution.png", bg = "white", width = 12, height = 12, units = 'in', res = 300)
+plot(flowClust.mergeopt,level=0.75,pch=20,main="Merged Solution");
+dev.off()
+
+print(flowClust.mergeopt@mu)
+print(flowClust.mergeopt@sigma)
 
 
