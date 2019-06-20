@@ -32,7 +32,8 @@ parser <- add_option (parser, c ("--xend"), type="integer", default = 40000, hel
 parser <- add_option (parser, c ("--ystart"), type="integer", default = 5000, help="")
 parser <- add_option (parser, c ("--yend"), type="integer", default = 38000, help="")
 parser <- add_option (parser, c ("--convergence"), type="double", default = 0.01, help="")
-parser <- add_option (parser, c ("--initfraction"), type="double", default = 0.02, help="")
+parser <- add_option (parser, c ("--initfraction"), type="double", default = 0.01, help="")
+parser <- add_option (parser, c ("--finalfraction"), type="double", default = 1.0, help="")
 parser <- add_option (parser, c ("--prior"), action = "store_true", default=FALSE, help="")
 parser <- add_option (parser, c ("--separation"), action = "store_true", default=FALSE, help="")
 parser <- add_option (parser, c ("--inits"), type="integer", default = 10, help="")
@@ -77,10 +78,10 @@ flowEMMiSampled<-function ( flowDataObject, initFraction, inits, numClusters, us
 
 # Run the flowEMMi algorithm on the full input data.
 
-flowEMMiFull<-function ( em, flowDataObject, numClusters, useLogScale, imageFormat, xMin, xMax, yMin, yMax, epsilon, ...)
+flowEMMiFull<-function ( em, flowDataObject, numClusters, finalFraction, useLogScale, imageFormat, xMin, xMax, yMin, yMax, epsilon, ...)
 {
   pd <- mkFractionedFlowData (fdo=flowDataObject
-                             ,fraction = 1.0
+                             ,fraction = finalFraction
                              ,xMin=xMin, xMax=xMax
                              ,yMin=yMin, yMax=yMax)
   em <- emInitWithPrior (em=em, flowData=pd)
@@ -93,7 +94,8 @@ flowEMMiFull<-function ( em, flowDataObject, numClusters, useLogScale, imageForm
 flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                          , xMin=0, xMax=4095,yMin=700,yMax=4095
                          ,useLogScale=TRUE,diff.ll=1
-                         ,initFraction=0.02
+                         ,initFraction=0.01
+                         ,finalFraction=1.0
                          ,minClusters=8,maxClusters=15,clusterbracket=3
                          ,prior=FALSE
                          ,pi_prior,mu_prior,sigma_prior,separation=TRUE,numberOfInits=5,total=FALSE,alpha=.05,imageFormat="png",verbose=TRUE
@@ -107,7 +109,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   fdo <- mkFlowDataObject(frame=frame,xChannel=ch1, yChannel=ch2)
 
   # setup parallelism
-  numCores <- if (disableParallelism) {1} else {detectCores()}
+  numCores <- if (disableParallelism) {1} else {max(1, detectCores()-1)}
 
   # run for each number of clusters
   parSampled <- function (c)
@@ -136,6 +138,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
     idx<-c-max(minClusters,bestLL-clusterbracket)+1
     em_<-ems[[idx]]
     em <- flowEMMiFull( em=em_, flowDataObject=fdo,
+                      , finalFraction=finalFraction
                       , numClusters=c, useLogScale=useLogScale, imageFormat=imageFormat
                       , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
                       , epsilon=convergenceEpsilon
@@ -218,6 +221,7 @@ results <- flowEMMi( frame = fcsData
                    , ch1=opts$channelx, ch2=opts$channely
                    , xMin = opts$xstart, xMax = opts$xend, yMin=opts$ystart, yMax=opts$yend
                    , initFraction = opts$initfraction
+                   , finalFraction = opts$finalfraction
                    , prior = opts$prior
                    , separation = opts$separation
                    , numberOfInits = opts$inits
