@@ -30,6 +30,8 @@ parser <- add_option (parser, c ("--maxcluster"), type="integer", default = 20, 
 parser <- add_option (parser, c ("--clusterbracket"), type="integer", default = 3, help="")
 parser <- add_option (parser, c ("--disableparallelism"), action="store_true", default = FALSE, help="")
 parser <- add_option (parser, c ("--convergence"), type="double", default = 10e-5, help="")
+parser <- add_option (parser, c ("--prefix"), type="character", default = "", help="output prefix")
+parser <- add_option (parser, c ("--suffix"), type="character", default = "", help="output suffix")
 
 opts <- parse_args(parser)
 
@@ -84,7 +86,7 @@ summary (flowClust.res)
 print ("plotting")
 
 # plot of flowClust BIC values
-png(file="flowmerge_bic.png", bg = "white", width = 12, height = 12, units = 'in', res = 300)
+png(file=sprintf("./%s/flowmerge-bic-%s.png",opts$prefix,opts$suffix), bg = "white", width = 12, height = 12, units = 'in', res = 300)
 plot(flowMerge:::BIC(flowClust.res))
 dev.off()
 
@@ -94,22 +96,28 @@ flowClust.merge<-merge(flowClust.flowobj,metric="entropy")
 i<-fitPiecewiseLinreg(flowClust.merge)
 flowClust.mergeopt<-flowClust.merge[[i]]
 
-png(file="flowmerge_maxbic_solution.png", bg = "white", width = 12, height = 12, units = 'in', res = 300, pointsize=2)
+png(file=sprintf("./%s/flowmerge-maxbic-solution-%s.png",opts$prefix,opts$suffix), bg = "white", width = 12, height = 12, units = 'in', res = 300, pointsize=2)
 plot(flowClust.res[[4]], data=fcsData, main="Max BIC solution")
 dev.off()
 
-png(file="flowmerge_maxicl_solution.png", bg = "white", width = 12, height = 12, units = 'in', res = 300, pointsize=2)
+png(file=sprintf("./%s/flowmerge-maxicl-solution-%s.png",opts$prefix,opts$suffix), bg = "white", width = 12, height = 12, units = 'in', res = 300, pointsize=2)
 plot(flowClust.res[[which.max(flowMerge:::ICL(flowClust.res))]],data=fcsData,main="Max ICL solution");
 dev.off()
 
-png(file="flowmerge_merged_solution.png", bg = "white", width = 12, height = 12, units = 'in', res = 300)
+png(file=sprintf("./%s/flowmerge-merged-solution-%s.png",opts$prefix,opts$suffix), bg = "white", width = 12, height = 12, units = 'in', res = 300)
 plot(flowClust.mergeopt,level=0.75,pch=20,main="Merged Solution");
 dev.off()
 
-write (flowClust.mergeopt@mu, file="flowcust-mu.dat")
-write (flowClust.mergeopt@sigma, file="flowcust-sigma.dat")
+write (flowClust.mergeopt@mu, file=   sprintf("./%s/flowmerge-mu-%s.dat",opts$prefix,opts$suffix))
+write (flowClust.mergeopt@sigma, file=sprintf("./%s/flowmerge-sigma-%s.dat",opts$prefix,opts$suffix))
 
+print(flowClust.res[[4]])
+print(flowClust.mergeopt)
 print(flowClust.mergeopt@mu)
 print(flowClust.mergeopt@sigma)
 
+ests<-getEstimates(flowClust.mergeopt) # $proportions $locations
+
+write (ests$proportions, file=sprintf("./%s/flowmerge-proportions-%s.dat",opts$prefix,opts$suffix))
+write (ests$locations, file=sprintf("./%s/flowmerge-locations-%s.dat",opts$prefix,opts$suffix))
 
