@@ -2,6 +2,7 @@
 # need to call ./R explicitly
 
 { nixpkgs ? import <nixpkgs> {} }:
+#{ nixpkgs ? import <unstable> {} }:
 
 # working nixos 19.03: 30a82bba734
 

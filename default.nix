@@ -3,7 +3,7 @@
 
  # with import <nixpkgs> {};
 
-{ rWrapper, rPackages, zlib, parallel, libxml2, fetchurl }:
+{ rWrapper, rPackages, zlib, parallel, libxml2, fetchurl, fetchFromGitHub }:
 
 let
 
@@ -18,11 +18,16 @@ let
           patchShebangs configure
         '';
       });
+      flowWorkspace = RflowWorkspace;
     }; # overrides
   };
 
   # what we need for our system
-  rPemmi = with rP; [ Rcpp RcppEigen optparse flowCore flowViz ggplot2 gtools ellipse mixtools mvtnorm colortools tictoc parallel snow Rmpi RflowWorkspace ];
+  rPemmi = with rP; [
+      Rcpp RcppEigen optparse flowCore flowViz ggplot2 gtools ellipse mixtools mvtnorm colortools tictoc parallel snow Rmpi
+      RflowWorkspace
+      CytoML
+    ];
 
   # required overrides due to failuers
 
@@ -33,6 +38,13 @@ let
     name = "flowWorkspace";
     version = "3.30.2";
     # version 3.32.0 does not build
+    # below is the "head" version which is way too incompatible
+    # src = fetchFromGitHub {
+    #   owner = "RGLab";
+    #   repo = "flowWorkspace";
+    #   rev = "faac59574d3a04c182e8edcf337bc162d81a7ee5";
+    #   sha256 = "1xkfh8wjxmm1ygipgghv2rfibvgybbxpcsg4i8q2dlpxdij3d20f";
+    # };
     src = fetchurl {
       #sha256 = "1r1xxqzlp2x2gf79f37ckninnyjkxcb7xz7rffg2nadmapl5shvw"; # 3.32.0
       sha256 = "19ifpwpk9rmmfm647zm419k50hna8ib0ad75l04xbggdm6s3vm41";
