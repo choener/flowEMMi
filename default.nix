@@ -1,7 +1,9 @@
 # just calling "nix-shell" yields a shell where everything is available, but we
 # need to call ./R explicitly
 
-with import <nixpkgs> {};
+ # with import <nixpkgs> {};
+
+{ rWrapper, rPackages, zlib, parallel, libxml2, fetchurl }:
 
 let
 
