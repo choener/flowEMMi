@@ -36,22 +36,100 @@ parser <- add_option (parser, c ("--suffix"), type="character", default = "", he
 opts <- parse_args(parser)
 
 
-fcsData <- read.FCS(opts$file,alter.names = TRUE,transformation = FALSE)
-summary (fcsData)
-colnames(fcsData)
-origNRow <- nrow(fcsData@exprs)
-fdo <- mkFlowDataObject(frame=fcsData,xChannel=opts$channelx, yChannel=opts$channely)
-pd <- mkFractionedFlowData (fdo=fdo
-                           ,fraction = opts$initfraction
-                           ,xMin=opts$xstart, xMax=opts$xend
-                           ,yMin=opts$ystart, yMax=opts$yend)
 
-# TODO remove when actually measuring; flowClust is slower than flowEMMi (by a
-# huge factor), this way we can test the performance script at least
+# prepare our data, by setting up things in parent score
 
-fcsData@exprs <- pd@sampled
-sampledNRow <- nrow(fcsData@exprs)
-cat (sprintf("number of rows originally: %.0f, sampled: %.0f\n", origNRow, sampledNRow))
+prepareData <- function( filename, channelx="PMT.1", channely="PMT.9" ) {
+  fcsData <<- read.FCS(filename,alter.names = TRUE,transformation = FALSE)
+  summary (fcsData)
+  colnames(fcsData)
+  origNRow <<- nrow(fcsData@exprs)
+  fdo <<- mkFlowDataObject(frame=fcsData,xChannel=channelx, yChannel=channely)
+  pd <<- mkFractionedFlowData (fdo=fdo
+                              ,fraction = opts$initfraction
+                              ,xMin=opts$xstart, xMax=opts$xend
+                              ,yMin=opts$ystart, yMax=opts$yend)
+  # TODO remove when actually measuring; flowClust is slower than flowEMMi (by a
+  # huge factor), this way we can test the performance script at least
+
+  fcsData@exprs <<- pd@sampled
+  sampledNRow <<- nrow(fcsData@exprs)
+  cat (sprintf("number of rows originally: %.0f, sampled: %.0f\n", origNRow, sampledNRow))
+} # prepareData
+
+
+
+# run flowmerge
+
+runFlowMerge <- function ( ) {
+  tic(msg="flowClust call")
+  flowClust.res <<- if (opts$disableparallelism)
+  {
+    pFlowMerge(cl=NULL, fcsData, varNames=c(opts$channelx, opts$channely), K=(opts$mincluster):(opts$maxcluster),trans=1,nu.est=1,randomStart=opts$inits);
+  } else
+  {
+    flowClust(fcsData, varNames=c(opts$channelx, opts$channely), K=(opts$mincluster):(opts$maxcluster),trans=1,nu.est=1,randomStart=opts$inits
+              ,tol=opts$convergence # flowClust default is 10e-5 and flowEMMi uses 10e-2
+              );
+  }
+  toc()
+  summary (flowClust.res)
+} # runFlowMerge
+
+
+
+# produce the optimal clustering result
+
+runFlowMergeOpt <- function () {
+  flowClust.maxBIC <<- flowClust.res[[which.max(BIC(flowClust.res))]]
+  flowClust.flowobj <<- flowObj(flowClust.maxBIC,fcsData);
+  flowClust.merge <<- merge(flowClust.flowobj,metric="entropy")
+  i <- fitPiecewiseLinreg(flowClust.merge) # local only
+  flowClust.mergeopt <<- flowClust.merge[[i]]
+} # runFlowMergeOpt
+
+
+
+runFlowMergePlots <- function () {
+  png(file=sprintf("./%s/flowmerge-bic-%s.png",opts$prefix,opts$suffix), bg = "white", width = 12, height = 12, units = 'in', res = 300)
+  plot(flowMerge:::BIC(flowClust.res))
+  dev.off()
+
+  png(file=sprintf("./%s/flowmerge-maxbic-solution-%s.png",opts$prefix,opts$suffix), bg = "white", width = 12, height = 12, units = 'in', res = 300, pointsize=2)
+  plot(flowClust.res[[4]], data=fcsData, main="Max BIC solution")
+  dev.off()
+
+  png(file=sprintf("./%s/flowmerge-maxicl-solution-%s.png",opts$prefix,opts$suffix), bg = "white", width = 12, height = 12, units = 'in', res = 300, pointsize=2)
+  plot(flowClust.res[[which.max(flowMerge:::ICL(flowClust.res))]],data=fcsData,main="Max ICL solution");
+  dev.off()
+
+  png(file=sprintf("./%s/flowmerge-merged-solution-%s.png",opts$prefix,opts$suffix), bg = "white", width = 12, height = 12, units = 'in', res = 300)
+  plot(flowClust.mergeopt,level=0.75,pch=20,main="Merged Solution");
+  dev.off()
+
+  #write (flowClust.mergeopt@mu, file=   sprintf("./%s/flowmerge-mu-%s.dat",opts$prefix,opts$suffix))
+  #write (flowClust.mergeopt@sigma, file=sprintf("./%s/flowmerge-sigma-%s.dat",opts$prefix,opts$suffix))
+
+  print(flowClust.mergeopt)
+  print(flowClust.mergeopt@mu)
+  print(flowClust.mergeopt@sigma)
+}
+
+
+
+# write out the labels for the optimal solution. These labels are then to be used
+
+writeFlowMergeLabels <- function ( filename, xs ) {
+  write (xs@label, file = filename, ncolumns = 1)
+}
+
+
+# depending on if we are interactive or not, run automatically or have the user do stuff
+
+if (interactive()){
+} else { # interfactive
+  prepareData (opts$file, opts$channelx, opts$channely)
+  runFlowMerge ()
 
 #fcsData@exprs[,opts$channelx]
 #vs<-cbind(denoisedData@data[,fdo@xChannel],denoisedData@data[,fdo@yChannel]) #both dimensions as matrix
@@ -70,54 +148,9 @@ cat (sprintf("number of rows originally: %.0f, sampled: %.0f\n", origNRow, sampl
 # TODO in case of disableparallelism, call pFlowClust with cl=NULL, to be able
 # to compare both approaches.
 
-tic(msg="flowClust call")
-flowClust.res <- if (opts$disableparallelism)
-{
-  pFlowMerge(cl=NULL, fcsData, varNames=c(opts$channelx, opts$channely), K=(opts$mincluster):(opts$maxcluster),trans=1,nu.est=1,randomStart=opts$inits);
-} else
-{
-  flowClust(fcsData, varNames=c(opts$channelx, opts$channely), K=(opts$mincluster):(opts$maxcluster),trans=1,nu.est=1,randomStart=opts$inits
-            ,tol=opts$convergence # flowClust default is 10e-5 and flowEMMi uses 10e-2
-            );
-}
-toc()
-summary (flowClust.res)
+#ests<-getEstimates(flowClust.mergeopt) # $proportions $locations
+#
+#write (ests$proportions, file=sprintf("./%s/flowmerge-proportions-%s.dat",opts$prefix,opts$suffix))
+#write (ests$locations, file=sprintf("./%s/flowmerge-locations-%s.dat",opts$prefix,opts$suffix))
 
-print ("plotting")
-
-# plot of flowClust BIC values
-png(file=sprintf("./%s/flowmerge-bic-%s.png",opts$prefix,opts$suffix), bg = "white", width = 12, height = 12, units = 'in', res = 300)
-plot(flowMerge:::BIC(flowClust.res))
-dev.off()
-
-flowClust.maxBIC<-flowClust.res[[which.max(BIC(flowClust.res))]]
-flowClust.flowobj<-flowObj(flowClust.maxBIC,fcsData);
-flowClust.merge<-merge(flowClust.flowobj,metric="entropy")
-i<-fitPiecewiseLinreg(flowClust.merge)
-flowClust.mergeopt<-flowClust.merge[[i]]
-
-png(file=sprintf("./%s/flowmerge-maxbic-solution-%s.png",opts$prefix,opts$suffix), bg = "white", width = 12, height = 12, units = 'in', res = 300, pointsize=2)
-plot(flowClust.res[[4]], data=fcsData, main="Max BIC solution")
-dev.off()
-
-png(file=sprintf("./%s/flowmerge-maxicl-solution-%s.png",opts$prefix,opts$suffix), bg = "white", width = 12, height = 12, units = 'in', res = 300, pointsize=2)
-plot(flowClust.res[[which.max(flowMerge:::ICL(flowClust.res))]],data=fcsData,main="Max ICL solution");
-dev.off()
-
-png(file=sprintf("./%s/flowmerge-merged-solution-%s.png",opts$prefix,opts$suffix), bg = "white", width = 12, height = 12, units = 'in', res = 300)
-plot(flowClust.mergeopt,level=0.75,pch=20,main="Merged Solution");
-dev.off()
-
-write (flowClust.mergeopt@mu, file=   sprintf("./%s/flowmerge-mu-%s.dat",opts$prefix,opts$suffix))
-write (flowClust.mergeopt@sigma, file=sprintf("./%s/flowmerge-sigma-%s.dat",opts$prefix,opts$suffix))
-
-print(flowClust.res[[4]])
-print(flowClust.mergeopt)
-print(flowClust.mergeopt@mu)
-print(flowClust.mergeopt@sigma)
-
-ests<-getEstimates(flowClust.mergeopt) # $proportions $locations
-
-write (ests$proportions, file=sprintf("./%s/flowmerge-proportions-%s.dat",opts$prefix,opts$suffix))
-write (ests$locations, file=sprintf("./%s/flowmerge-locations-%s.dat",opts$prefix,opts$suffix))
-
+} # not interactive

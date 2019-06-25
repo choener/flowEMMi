@@ -3,13 +3,13 @@
 
  # with import <nixpkgs> {};
 
-{ rWrapper, rPackages, zlib, parallel, libxml2, fetchurl, fetchFromGitHub }:
+{ rWrapper, rPackages, zlib, parallel, libxml2, fetchurl, fetchFromGitHub, recurseIntoAttrs }:
 
 let
 
   # rPackages to be overriden
-  rP = rPackages.override {
-    overrides = rec {
+  rP = (rPackages.override {
+    overrides = (rec {
       ncdfFlow = rPackages.ncdfFlow.overrideAttrs (old: rec {
         depends = old.depends ++ [ zlib ];
       });
@@ -19,8 +19,11 @@ let
         '';
       });
       flowWorkspace = RflowWorkspace;
-    }; # overrides
-  };
+      #flowWorkspace = rPackages.flowWorkspace.overrideAttrs (old: rec {
+      #  nativeBuildInputs = old.nativeBuildInputs ++ [ libxml2 ];
+      #});
+    }); # overrides
+  });
 
   # what we need for our system
   rPemmi = with rP; [
