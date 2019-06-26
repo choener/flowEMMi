@@ -64,21 +64,38 @@ calcConfusion <- function (ts, xs) {
 }
 
 
+# Given a single sample, (say gs[[1]]) produce a label vector.
+
+getLabelVector <- function (gatingH) {
+  idx <- 1
+  l <- nrow(getData(gatingH))
+  lvec <- integer(l)
+  # loop over all gates
+  for (g in tail(getNodes(gatingH, path=1), n=-6)) {
+    # extract indices boolean vector
+    bs <- getIndices(gatingH, g)
+    # replace True by 'idx' in the target
+    lvec <- mapply (function (c,b) { if (b) {idx} else {c} }, lvec, bs)
+    idx <- idx+1
+  } # for gates
+  lvec
+} # getLabelVector
+
 
 t1 <- c(1,1,1,1,2,2,2,3,3,NA)
 x1 <- c(3,3,3,2,2,2,1,1,2,NA)
 
-# ws <- openWorkspace("./wsp/florian/Gating_Test_FS.wsp")
-# print (ws)
-# summary (ws)
-# 
-# gs <- parseWorkspace(ws, path="./fcs")
-# summary (gs)
-# sampleNames(gs)
-# 
-# # single run
-# gh <- gs[[1]]
-# 
+ws <- openWorkspace("./wsp/florian/Gating_Test_FS.wsp")
+print (ws)
+summary (ws)
+
+gs <- parseWorkspace(ws, path="./fcs")
+summary (gs)
+sampleNames(gs)
+
+# single run
+gh <- gs[[1]]
+
 # # nodes / leading to gates
 # ghns <- getNodes (gh)
 # 
