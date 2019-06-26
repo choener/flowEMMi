@@ -57,7 +57,12 @@ mkFractionedFlowData <- function(fdo, fraction=1.0, xMin, xMax, yMin, yMax)
   denoisedData<-mkFlowDataObject(frame=denoised.subset, xChannel=fdo@xChannel, yChannel=fdo@yChannel)
   # subsample every nth element
   vs<-cbind(denoisedData@data[,fdo@xChannel],denoisedData@data[,fdo@yChannel]) #both dimensions as matrix
-  subsampled<-vs[sample(nrow(vs),size=nrow(vs) * fraction,replace=FALSE),]
+  # make sure to keep data ordered if no subsampled is requested
+  if (fraction>=1) {
+    subsampled<-vs
+  } else {
+    subsampled<-vs[sample(nrow(vs),size=nrow(vs) * fraction,replace=FALSE),]
+  }
   colnames(subsampled) <- list(fdo@xChannel, fdo@yChannel)
   toc()
 
@@ -102,5 +107,22 @@ updateEMRun <- function (em, mu, sigma, weight, clusterProbs, logL)
   em@clusterProbs <- clusterProbs
   em@logL <- logL
   return (em)
+}
+
+
+
+# provide a label vector for each data element in an @em@ structure. If below
+# the cutoff, the label is set "0" to indicate background.
+getLabels <- function (em, cutoff=0.5) {
+  ms <- apply(em@weight, 1, which.max)
+  f <- function (i) {
+    l <- ms[i]
+    if (em@weight[i,l] < cutoff) {
+      l <- 0
+    }
+    l
+  }
+  ms <- sapply(1:length(ms), f)
+  ms
 }
 

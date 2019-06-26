@@ -27,11 +27,13 @@ iterateEM <- function (deltaThreshold, numClusters, flowData)
 
 
 
-iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData)
+iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData,verbose=FALSE)
 {
   tic(msg="timing iterateEM")
-  cat (sprintf("Starting EM with threshold %.4f threshold, %d clusters\n", deltaThreshold, numClusters))
-  cat (sprintf("Iteration       Δ LL\n"))
+  if (verbose) {
+    cat (sprintf("Starting EM with threshold %.4f threshold, %d clusters\n", deltaThreshold, numClusters))
+    cat (sprintf("Iteration       Δ LL\n"))
+  }
   stepDelta <- Inf
   iteration <- 0
   while (stepDelta > deltaThreshold)
@@ -47,7 +49,9 @@ iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData)
     ws_ <- c(em@clusterProbs, 0, 0, 0)
     weights <-sprintf("%4.3f %4.3f %4.3f ...",ws_[1], ws_[2], ws_[3])
     poss <- "" # sprintf("%020s", toString (em@mu))
-    cat (sprintf("%5d %14.4f    %s %s\n", iteration, stepDelta, weights, poss))
+    if (verbose) {
+      cat (sprintf("%5d %14.4f    %s %s\n", iteration, stepDelta, weights, poss))
+    }
     iteration <- iteration +1
   }
   toc()

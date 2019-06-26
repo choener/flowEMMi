@@ -109,7 +109,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   fdo <- mkFlowDataObject(frame=frame,xChannel=ch1, yChannel=ch2)
 
   # setup parallelism
-  numCores <- if (disableParallelism) {1} else {max(1, detectCores()-1)}
+  numCores <- if (disableParallelism) {1} else {max(1, detectCores())}
 
   # run for each number of clusters
   parSampled <- function (c)
@@ -131,18 +131,25 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
       bestLL <- b
     }
   }
+  lapply(ems, function(e) { print(e@logL) })
+  print(bestLL)
 
   # around best number of clusters, run flowEMMi again
   parFull <- function (c)
   {
     idx<-c-max(minClusters,bestLL-clusterbracket)+1
-    em_<-ems[[idx]]
+    cat(sprintf("full calculation with %d clusters, idx %d\n",c,idx))
+    em_<-ems[[c-(minClusters-1)]]
     em <- flowEMMiFull( em=em_, flowDataObject=fdo,
                       , finalFraction=finalFraction
                       , numClusters=c, useLogScale=useLogScale, imageFormat=imageFormat
                       , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
                       , epsilon=convergenceEpsilon
                       )
+    ls <- getLabels(em)
+    print(table(ls))
+    print(em@mu)
+    write(ls, file=sprintf("label_assignment_%d.dat",c))
     return (em)
   }
   emsFull<-mclapply (max(minClusters,bestLL-clusterbracket):min(maxClusters,bestLL+clusterbracket), parFull, mc.cores=numCores)
