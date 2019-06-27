@@ -63,6 +63,15 @@ calcConfusion <- function (ts, xs) {
       , rtp, fn/tcs, fp/xcs) # relativized
 }
 
+fOneFromCon <- function (c, beta=1.0) {
+  tp <- c[[1]]
+  fn <- c[[2]]
+  fp <- c[[3]]
+  betatp <- (1+beta*beta) * tp
+  betafn <- (beta*beta) * fn
+  fbeta <- betatp / (betatp + betafn + fp)
+}
+
 
 # Given a single sample, (say gs[[1]]) produce a label vector.
 

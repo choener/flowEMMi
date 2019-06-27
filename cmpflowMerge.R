@@ -128,8 +128,16 @@ writeFlowMergeLabels <- function ( filename, xs ) {
 
 if (interactive()){
 } else { # interfactive
+  print("preparing data")
   prepareData (opts$file, opts$channelx, opts$channely)
+  print("flowMerge")
   runFlowMerge ()
+  print("flowMergeOpt")
+  runFlowMergeOpt()
+  print("flowMergePlots")
+  runFlowMergePlots()
+  print("writing label file")
+  writeFlowMergeLabels("flowmergeopt.dat", flowClust.mergeopt)
 
 #fcsData@exprs[,opts$channelx]
 #vs<-cbind(denoisedData@data[,fdo@xChannel],denoisedData@data[,fdo@yChannel]) #both dimensions as matrix
