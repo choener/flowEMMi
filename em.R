@@ -54,7 +54,7 @@ opts <- parse_args(parser)
 # Finds for a given number of clusters the best initialization based on
 # log-likelihood.
 
-flowEMMiSampled<-function ( flowDataObject, initFraction, inits, numClusters, useLogScale, imageFormat, xMin, xMax, yMin, yMax, epsilon)
+flowEMMiSampled<-function ( flowDataObject, initFraction, inits, numClusters, useLogScale, imageFormat, xMin, xMax, yMin, yMax, epsilon, verbose=FALSE)
 {
   em<-NULL
   # run inits with fraction of points
@@ -64,7 +64,7 @@ flowEMMiSampled<-function ( flowDataObject, initFraction, inits, numClusters, us
                                ,fraction = initFraction
                                ,xMin=xMin, xMax=xMax
                                ,yMin=yMin, yMax=yMax)
-    em_ <- iterateEM (deltaThreshold = epsilon, numClusters=numClusters, flowData = pd)
+    em_ <- iterateEM (deltaThreshold = epsilon, numClusters=numClusters, flowData = pd, verbose=verbose)
     if (is.null(em) || em@logL < em_@logL)
     {
       em <- em_
@@ -78,14 +78,14 @@ flowEMMiSampled<-function ( flowDataObject, initFraction, inits, numClusters, us
 
 # Run the flowEMMi algorithm on the full input data.
 
-flowEMMiFull<-function ( em, flowDataObject, numClusters, finalFraction, useLogScale, imageFormat, xMin, xMax, yMin, yMax, epsilon, ...)
+flowEMMiFull<-function ( em, flowDataObject, numClusters, finalFraction, useLogScale, imageFormat, xMin, xMax, yMin, yMax, epsilon, verbose=FALSE, ...)
 {
   pd <- mkFractionedFlowData (fdo=flowDataObject
                              ,fraction = finalFraction
                              ,xMin=xMin, xMax=xMax
                              ,yMin=yMin, yMax=yMax)
   em <- emInitWithPrior (em=em, flowData=pd)
-  em <- iterateInitedEM(em=em, deltaThreshold=epsilon, numClusters=numClusters, flowData=pd)
+  em <- iterateInitedEM(em=em, deltaThreshold=epsilon, numClusters=numClusters, flowData=pd, verbose=verbose)
   return (em)
 }
 
@@ -112,15 +112,18 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   numCores <- if (disableParallelism) {1} else {max(1, detectCores())}
 
   # run for each number of clusters
+  tic(msg="sampled subset EM")
   parSampled <- function (c)
   {
     em <- flowEMMiSampled( flowDataObject=fdo, initFraction=initFraction, inits=numberOfInits
                          , numClusters=c, useLogScale=useLogScale, imageFormat=imageFormat
                          , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
-                         , epsilon=convergenceEpsilon)
+                         , epsilon=convergenceEpsilon / initFraction
+                         , verbose=F)
     return (em)
   }
   ems<-mclapply (minClusters:maxClusters, parSampled, mc.cores=numCores)
+  toc()
 
   # find best number of clusters
   bestLL <-NULL
@@ -135,24 +138,49 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   print(bestLL)
 
   # around best number of clusters, run flowEMMi again
+  tic(msg="full EM run on best subset of clusters")
+  minStart <-max(minClusters,bestLL-clusterbracket)
   parFull <- function (c)
   {
-    idx<-c-max(minClusters,bestLL-clusterbracket)+1
+    idx<-c-minStart+1
     cat(sprintf("full calculation with %d clusters, idx %d\n",c,idx))
     em_<-ems[[c-(minClusters-1)]]
+    # set up labels in a 1-step em
     em <- flowEMMiFull( em=em_, flowDataObject=fdo,
                       , finalFraction=finalFraction
                       , numClusters=c, useLogScale=useLogScale, imageFormat=imageFormat
                       , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
+                      , epsilon=100 * convergenceEpsilon
+                      , verbose=T
+                      )
+    pre <- getLabels(em)
+    em <- flowEMMiFull( em=em, flowDataObject=fdo,
+                      , finalFraction=finalFraction
+                      , numClusters=c, useLogScale=useLogScale, imageFormat=imageFormat
+                      , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
                       , epsilon=convergenceEpsilon
+                      , verbose=T
                       )
     ls <- getLabels(em)
+    crosses <- table(pre,ls)
+    print(crosses)
     print(table(ls))
     print(em@mu)
     write(ls, file=sprintf("label_assignment_%d.dat",c))
     return (em)
   }
-  emsFull<-mclapply (max(minClusters,bestLL-clusterbracket):min(maxClusters,bestLL+clusterbracket), parFull, mc.cores=numCores)
+  emsFull<-mclapply (minStart:min(maxClusters,bestLL+clusterbracket), parFull, mc.cores=numCores)
+  toc()
+
+  # TODO find best LL, return 
+  lls <- lapply(emsFull, function(e) { e@logL })
+  llmax <- which.max (lls) + minStart-1
+  print(which.max(lls))
+  print(minStart)
+  print(lls)
+  print(llmax)
+  bestem <- emsFull[[which.max(lls)]]
+  write(getLabels(bestem), file=sprintf("best_%d_labels_%f_logL.dat", llmax, bestem@logL))
 
   error ()
 

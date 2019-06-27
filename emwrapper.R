@@ -18,10 +18,10 @@ sourceCpp(file = "./em_fast_sigma.cpp", cacheDir = "./.cacheDir")
 # TODO have tictoc write to a file with additional information. Develop perf.R
 # module for this.
 
-iterateEM <- function (deltaThreshold, numClusters, flowData)
+iterateEM <- function (deltaThreshold, numClusters, flowData, verbose=FALSE)
 {
   em <- emInit (numClusters = numClusters, flowData = flowData)
-  em <- iterateInitedEM (em=em, deltaThreshold=deltaThreshold, numCluster=numClusters, flowData=flowData)
+  em <- iterateInitedEM (em=em, deltaThreshold=deltaThreshold, numCluster=numClusters, flowData=flowData, verbose=verbose)
   return (em)
 }
 
@@ -49,7 +49,7 @@ iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData,verbose=FA
     ws_ <- c(em@clusterProbs, 0, 0, 0)
     weights <-sprintf("%4.3f %4.3f %4.3f ...",ws_[1], ws_[2], ws_[3])
     poss <- "" # sprintf("%020s", toString (em@mu))
-    if (verbose) {
+    if (verbose && (iteration %% 10 == 0)) {
       cat (sprintf("%5d %14.4f    %s %s\n", iteration, stepDelta, weights, poss))
     }
     iteration <- iteration +1
