@@ -126,8 +126,8 @@ createData <- function () {
   df <- data.frame(time=double(), f1=double(), epsilon=double(), label=character(),stringsAsFactors=FALSE)
 
   # flowEMMI and flowMerge sources
-  algos <- c("emmi")
-  #algos <- c("emmi", "merge")
+  #algos <- c("emmi")
+  algos <- c("merge", "emmi")
   tests <- c("12", "25", "26", "39")
   # testNames <- c("InTH_160713_012.fcs_225880", "InTH_160712_025.fcs_252227", "InTH_160720_026.fcs_212880", "InTH_160719_039.fcs_303271")
   es <- c(1e+0, 1e-2, 1e-5)
@@ -145,11 +145,12 @@ createData <- function () {
           algofname <- ""
           if (algo=="emmi") {
             algofname <- Sys.glob(sprintf("./out-flow%s/0%s-1e%s/best*dat",algo, test, eN))
-          } else {
+          }
+          if (algo=="merge") {
             algofname <- Sys.glob(sprintf("./out-flow%s/0%s-1e%s/flowmergeopt*dat",algo, test, eN))
           }
           print(algofname)
-          if (file.exists(algofname)) {
+          if (length(algofname) > 0 && file.exists(algofname)) {
             algolabels <- scan(algofname)
             # get gating information, by finding the correct sample name
             gates <- usergates[[user]]
@@ -183,6 +184,18 @@ createData <- function () {
 
 t1 <- c(1,1,1,1,2,2,2,3,3,NA)
 x1 <- c(3,3,3,2,2,2,1,1,2,NA)
+
+plotFromData <- function (fname) {
+  csv <- read.csv (fname)
+  xmin = min(csv$f1)
+  xmax = max(csv$f1)
+  ymin = min(csv$time)
+  ymax = max(csv$time)
+  es <- csv[csv$label == "emmi",]
+  ms <- csv[csv$label == "merge",]
+  plot( time ~ f1, data=es, xlim=c(xmin,xmax), ylim=c(ymin,ymax) )
+  points ( time ~ f1, data=ms )
+}
 
 #ws <- openWorkspace("./wsp/florian/Gating_Test_FS.wsp")
 #print (ws)
