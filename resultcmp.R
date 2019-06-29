@@ -187,14 +187,17 @@ x1 <- c(3,3,3,2,2,2,1,1,2,NA)
 
 plotFromData <- function (fname) {
   csv <- read.csv (fname)
+  print(csv)
+  print(as.factor(csv$epsilon))
   xmin = min(csv$f1)
   xmax = max(csv$f1)
   ymin = min(csv$time)
   ymax = max(csv$time)
   es <- csv[csv$label == "emmi",]
   ms <- csv[csv$label == "merge",]
-  plot( time ~ f1, data=es, xlim=c(xmin,xmax), ylim=c(ymin,ymax) )
-  points ( time ~ f1, data=ms )
+  plot( time ~ f1, data=es, xlim=c(xmin,xmax), ylim=c(ymin,ymax), pch=c("ε","e","E")[as.numeric(as.factor(epsilon))], col="blue" )
+  points ( time ~ f1, data=ms, pch=c("μ","m","M")[as.numeric(as.factor(epsilon))], col="red" )
+  # points ( time ~ f1, data=ms, pch="M", col=c("red","green","blue")[as.numeric(as.factor(epsilon))] )
 }
 
 #ws <- openWorkspace("./wsp/florian/Gating_Test_FS.wsp")
