@@ -107,8 +107,8 @@ createData <- function () {
   # known gates
   # TODO rename users to shortened letters?
   # TODO johannes, thomas
-  users <- c("florian")
-  # users <- c("zishu", "florian", "susanne")
+  # users <- c("florian")
+  users <- c("johannes", "thomas", "zishu", "florian", "susanne")
   usergates <- list()
   for (user in users) {
     print(user)
@@ -123,7 +123,8 @@ createData <- function () {
 
   # we now have loaded all user gates and can proceed with f-measure calculations
 
-  df <- data.frame(time=double(), f1=double(), epsilon=double(), label=character(),stringsAsFactors=FALSE)
+  df <- data.frame(time=double(), f1=double(), epsilon=double(), label=character(), user=character(), gatefilename=character(), numgates=integer(), algonumgates=integer()
+                   ,stringsAsFactors=FALSE)
 
   # flowEMMI and flowMerge sources
   #algos <- c("emmi")
@@ -165,13 +166,15 @@ createData <- function () {
             gLabelVec <- getLabelVector(gate)
             cat (sprintf("user label vector length: %d, algo label vector length: %d\n", length(gLabelVec), length(algolabels)))
             c <- calcConfusion(gLabelVec, algolabels)
+            numOfGates <- length(as.vector(table(gLabelVec)))
+            algoNumOfGates <- length(as.vector(table(algolabels)))
             f1 <- fOneFromCon(c)
             print(f1)
             lbl <- sprintf("%s", algo)
             timefname <- Sys.glob(sprintf("./out-flow%s/0%s-1e%s/test.out",algo, test, eN))
             timelines <- readLines(timefname)
             seconds <- as.double(str_extract(timelines[[1]],"(\\.|[:digit:])+"))
-            df[nrow(df)+1,] = list(seconds, f1, eV, lbl)
+            df[nrow(df)+1,] = list(seconds, f1, eV, lbl, user, test, numOfGates, algoNumOfGates)
             print(df)
           } # file.exists (algofname)
         } # es
