@@ -188,6 +188,8 @@ createData <- function () {
 t1 <- c(1,1,1,1,2,2,2,3,3,NA)
 x1 <- c(3,3,3,2,2,2,1,1,2,NA)
 
+# cairo_ps (file=bla)
+# dev.off ()
 plotFromData <- function (fname) {
   csv <- read.csv (fname)
   print(csv)
@@ -198,7 +200,18 @@ plotFromData <- function (fname) {
   ymax = max(csv$time)
   es <- csv[csv$label == "emmi",]
   ms <- csv[csv$label == "merge",]
-  plot( time ~ f1, data=es, xlim=c(xmin,xmax), ylim=c(ymin,ymax), pch=c("ε","e","E")[as.numeric(as.factor(epsilon))], col="blue", xlab="F1 Measure", ylab="running time in seconds" )
+  plot( time ~ f1, data=es
+       , xlim=c(xmin,xmax), ylim=c(ymin,ymax)
+       , pch=c("ε","e","E")[as.numeric(as.factor(epsilon))]
+       , col="blue"
+       , xlab="F1 Measure", ylab="running time in seconds"
+       , log="y"
+       , yaxt="n"
+  )
+  at.y <- outer(1:9, 10^(0:7))
+  lab.y <- ifelse(log10(at.y) %% 1 == 0, at.y, NA)
+  options(scipen=1)
+  axis(2, at=at.y, labels=lab.y, las=1)
   points ( time ~ f1, data=ms, pch=c("μ","m","M")[as.numeric(as.factor(epsilon))], col="red" )
   # points ( time ~ f1, data=ms, pch="M", col=c("red","green","blue")[as.numeric(as.factor(epsilon))] )
 }
