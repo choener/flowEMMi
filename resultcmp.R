@@ -198,7 +198,7 @@ plotFromData <- function (fname) {
   ymax = max(csv$time)
   es <- csv[csv$label == "emmi",]
   ms <- csv[csv$label == "merge",]
-  plot( time ~ f1, data=es, xlim=c(xmin,xmax), ylim=c(ymin,ymax), pch=c("ε","e","E")[as.numeric(as.factor(epsilon))], col="blue" )
+  plot( time ~ f1, data=es, xlim=c(xmin,xmax), ylim=c(ymin,ymax), pch=c("ε","e","E")[as.numeric(as.factor(epsilon))], col="blue", xlab="F1 Measure", ylab="running time in seconds" )
   points ( time ~ f1, data=ms, pch=c("μ","m","M")[as.numeric(as.factor(epsilon))], col="red" )
   # points ( time ~ f1, data=ms, pch="M", col=c("red","green","blue")[as.numeric(as.factor(epsilon))] )
 }
