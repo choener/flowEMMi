@@ -1,16 +1,29 @@
 
+library(colortools)
+library(mixtools)
+
 source("classes.R")
 
 
 
 # create plot of the (possibly sampling reduced) input data.
+# if gates exists, plot them into the graph.
+# if labels exist, use the labels to color
 
-plotInputData <- function (data, logScaled, imageFormat = "png", prefix="")
+plotInputData <- function (data,
+                           labels=NULL,
+                           mu=NULL,
+                           sigma=NULL,
+                           logScaled=FALSE,
+                           imageFormat = "png",
+                           prefix="")
 {
   # needed, because some data objects will hold more than 2 dimensions
   xchan <- data@data@x
   ychan <- data@data@y
   xy <- data@sampled
+  cfacts <- as.numeric(as.factor(labels))
+  colorfactors <- if (is.null(labels)) "black" else { wheel("darkblue", num=length(table(labels)))[cfacts] }
   #xy <- cbind(data@data[,data@x@channel], data@data[,data@y@channel])
   # pretty picture
   if (imageFormat=="png")
@@ -27,6 +40,7 @@ plotInputData <- function (data, logScaled, imageFormat = "png", prefix="")
          ,xlim=limitsC(xchan)
          ,ylim=limitsC(ychan)
          ,xlab=xchan@channel
+         ,col=colorfactors
          ,ylab=ychan@channel)
     strLabels <- c(expression(paste("10"^"0")) , expression(paste("10"^"1"))
                   ,expression(paste("10"^"2")) , expression(paste("10"^"3"))
@@ -37,15 +51,28 @@ plotInputData <- function (data, logScaled, imageFormat = "png", prefix="")
   {
     plot(xy
          ,type="p",cex=.6,pch=19
+         ,col=colorfactors
          ,xlim=limitsC(xchan)
          ,ylim=limitsC(ychan)
          ,xlab=xchan@channel
          ,ylab=ychan@channel)
+    print(mu)
+    print(sigma)
+    if (! is.null(mu)) { # we have gates and shall draw them
+      for (i in 1:length(sigma)) {
+        print(i)
+        print(mu[,i])
+        print(sigma[[i]])
+        ellipse(mu = mu[,i],
+                sigma = sigma[[i]],
+                alpha = 0.05
+                )
+        #lines(ellipse(sigma=matrix(unlist(act_sigma[[c]][j]), ncol = 2, byrow = TRUE),mu = act_mu[[c]][,j],alpha=alpha,npoints = 100), col="black")
+      }
+    }
   }
   dev.off()
 }
-
-
 
 # plot the BIC information
 plotBIC <- function (bic)

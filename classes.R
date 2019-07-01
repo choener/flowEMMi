@@ -1,5 +1,6 @@
 
 library("tictoc")
+library (flowCore)
 
 # limits
 setClass (Class="Limits", slots=c(channel="character", min="numeric", max="numeric"))
@@ -38,7 +39,7 @@ validFlowData <- function(object)
   #TODO we should check certain things
   TRUE
 }
-setClass (Class="FlowData", slots=c(data="FlowDataObject", sampled="matrix", fraction="numeric"), validity=validFlowData)
+FlowData <- setClass (Class="FlowData", slots=c(data="FlowDataObject", sampled="matrix", fraction="numeric"), validity=validFlowData)
 
 # create flow data object, including correct subsampling, etc
 # fraction is the subsampling parameter, 0 < fraction <= 1
@@ -76,7 +77,7 @@ mkFractionedFlowData <- function(fdo, fraction=1.0, xMin, xMax, yMin, yMax)
 
 
 # a single run of the EM algorithm with a given number of clusters
-setClass (Class="EMRun", slots=c(mu="matrix", sigma="list", weight="matrix", clusterProbs="numeric", logL="numeric"
+EMRun <- setClass (Class="EMRun", slots=c(mu="matrix", sigma="list", weight="matrix", clusterProbs="numeric", logL="numeric", data="list"
                                  ))
 mkEMRun <- function ()
 {
@@ -86,6 +87,7 @@ mkEMRun <- function ()
               , weight=matrix()
               , clusterProbs=0
               , logL=Inf
+              , data=list()
               ))
 }
 

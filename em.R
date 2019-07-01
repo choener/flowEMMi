@@ -68,6 +68,7 @@ flowEMMiSampled<-function ( flowDataObject, initFraction, inits, numClusters, us
     if (is.null(em) || em@logL < em_@logL)
     {
       em <- em_
+      em@data = list(pd)
       if (i == 1) { # plot only the first subset
         tic(msg="plotting input data")
         plotInputData(pd, logScaled = useLogScale, imageFormat = imageFormat, prefix=sprintf("%d_", i))
@@ -93,6 +94,7 @@ flowEMMiFull<-function ( em, flowDataObject
                              ,yMin=yMin, yMax=yMax)
   em <- emInitWithPrior (em=em, flowData=pd)
   em <- iterateInitedEM(em=em, deltaThreshold=epsilon, numClusters=numClusters, flowData=pd, verbose=verbose)
+  em@data = list(pd)
   return (em)
 }
 
@@ -143,6 +145,10 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   }
   lapply(ems, function(e) { print(e@logL) })
   print(bestLL)
+  emsbestll <- ems[[bestLL]]
+  plotInputData(emsbestll@data[[1]], labels = getLabels(emsbestll), mu=emsbestll@mu, sigma=emsbestll@sigma,
+                logScaled = useLogScale, imageFormat = imageFormat, prefix=sprintf("sampled")
+  )
 
   # around best number of clusters, run flowEMMi again
   tic(msg="full EM run on best subset of clusters")
@@ -189,6 +195,11 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   bestem <- emsFull[[which.max(lls)]]
   write(getLabels(bestem), file=sprintf("best_%d_labels_%f_logL.dat", llmax, bestem@logL))
 
+  # plot bestem data
+  plotInputData(bestem@data[[1]], labels = getLabels(bestem), mu=bestem@mu, sigma=bestem@sigma,
+                logScaled = useLogScale, imageFormat = imageFormat, prefix=sprintf("best")
+  )
+
   # relabel data, in particular if we have inclusion/exclusion boxes
   flowEMMiRelabel <- function (em_,c) {
     print("starting relabel")
@@ -208,72 +219,9 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   bestrel <- flowEMMiRelabel(bestem,llmax)
   toc()
   write(getLabels(bestrel), file=sprintf("best_relabel_%d_labels_%f_logL.dat", llmax, bestrel@logL))
-
-
-  error ()
-
-  #for (c in minClusters:maxClusters)
-  #{
-  #  parFunc (c)
-  #} # for c in clusters
-
-  # for each fraction, run the flowEMMi algorithm
-  for (f in fractions)
-  {
-    #pd <- mkFractionedFlowData (fdo=fdo
-    #                           ,fraction = f
-    #                           ,xMin=xMin, xMax=xMax
-    #                           ,yMin=yMin, yMax=yMax)
-
-    #plotInputData(pd, logScaled = useLogScale, imageFormat = imageFormat)
-
-    BIC<-rep(0,maxClusters)
-    palette <- wheel ("steelblue", num = maxClusters)
-    act_T<-list()
-    act_P_mat<-list()
-    act_pi<-list()
-    pis<-list()
-    act_mu<-list()
-    mus<-list()
-    act_sigma<-list()
-    sigmas<-list()
-    act_loglik<-list()
-    act_iterations<-list()
-    probs<-list()
-    ll<-list()
-    newList<-list()
-
-    # TODO parallelization (but consider what exactly to parallelize)
-    #
-    # numCores <- detectCores() # -1
-    # cluster  <- makeCluster(numCores)
-    # parLapply (cluster, minClusters:maxClusters, functionToCall)
-
-    for(c in minClusters:maxClusters)
-    {
-      #ll[c][1]<-0
-      #counter<-2
-      for (iteration in 1:numberOfInits)
-      {
-        # initialize the EM with lowest count of elements
-        em <- iterateEM (deltaThreshold = 0.01, numClusters = c, flowData = pd)
-        # increase element count
-        # for each initialization, run the algorithm
-        if (prior) {
-          # this variant assumes that we collected start points from somewhere else
-          # TODO re-use iterateEM ...
-        } else {
-          # this variant randomly selects start points for the EM algorithm
-        }
-      } # initiations
-    } # for minClusters ... maxClusters
-    plotBIC (newList$BIC)
-    statBIC (newList$BIC)
-    for(c in minClusters:maxClusters)
-    {
-      statCluster(newList$mu[[c]], newList$sigma[[c]])
-    }
-  } # for f in fractions
+  plotInputData(bestrel@data[[1]], labels=getLabels(bestrel), mu=bestrel@mu, sigma=bestrel@sigma,
+                logScaled = useLogScale, imageFormat = imageFormat, prefix=sprintf("relabel")
+  )
 } # flowEMMi
 
 
