@@ -145,7 +145,7 @@ createData <- function () {
           # we now need to load the appropriate data from the automated tools
           algofname <- ""
           if (algo=="emmi") {
-            algofname <- Sys.glob(sprintf("./out-flow%s/0%s-1e%s/best*dat",algo, test, eN))
+            algofname <- Sys.glob(sprintf("./out-flow%s/0%s-1e%s/best_relab*dat",algo, test, eN))
           }
           if (algo=="merge") {
             algofname <- Sys.glob(sprintf("./out-flow%s/0%s-1e%s/flowmergeopt*dat",algo, test, eN))
