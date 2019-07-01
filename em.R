@@ -161,7 +161,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                       , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
                       , epsilon=100 * convergenceEpsilon
                       #, useLogScale=useLogScale, imageFormat=imageFormat
-                      #, verbose=T
+                      , verbose=T
                       )
     pre <- getLabels(em)
     em <- flowEMMiFull( em=em, flowDataObject=fdo,
@@ -170,7 +170,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                       , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
                       , epsilon=convergenceEpsilon
                       #, useLogScale=useLogScale, imageFormat=imageFormat
-                      #, verbose=T
+                      , verbose=T
                       )
     ls <- getLabels(em)
     crosses <- table(pre,ls)
@@ -202,9 +202,9 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                       , xMin=0, xMax=100000
                       , yMin=0, yMax=100000
                       #, xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
-                      , epsilon=100 * convergenceEpsilon
+                      , epsilon=10000 # * convergenceEpsilon
                       #, useLogScale=useLogScale, imageFormat=imageFormat
-                      #, verbose=T
+                      , verbose=T
                       )
     return(em)
   } # relabelling
