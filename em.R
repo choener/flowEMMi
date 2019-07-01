@@ -85,10 +85,8 @@ flowEMMiFull<-function ( em, flowDataObject
                         , numClusters
                         , xMin, xMax, yMin, yMax
                         , epsilon
-                        #, useLogScale
-                        #, imageFormat
-                        , verbose=FALSE)
-{
+                        , verbose=TRUE
+) {
   pd <- mkFractionedFlowData (fdo=flowDataObject
                              ,fraction = finalFraction
                              ,xMin=xMin, xMax=xMax
@@ -159,9 +157,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                       , finalFraction=finalFraction
                       , numClusters=c
                       , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
-                      , epsilon=100 * convergenceEpsilon
-                      #, useLogScale=useLogScale, imageFormat=imageFormat
-                      , verbose=T
+                      , epsilon=(100 * convergenceEpsilon)
                       )
     pre <- getLabels(em)
     em <- flowEMMiFull( em=em, flowDataObject=fdo,
@@ -170,7 +166,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                       , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
                       , epsilon=convergenceEpsilon
                       #, useLogScale=useLogScale, imageFormat=imageFormat
-                      , verbose=T
+                      #, verbose=T
                       )
     ls <- getLabels(em)
     crosses <- table(pre,ls)
@@ -204,7 +200,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                       #, xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
                       , epsilon=10000 # * convergenceEpsilon
                       #, useLogScale=useLogScale, imageFormat=imageFormat
-                      , verbose=T
+                      #, verbose=T
                       )
     return(em)
   } # relabelling
