@@ -50,7 +50,7 @@ mkFractionedFlowData <- function(fdo, fraction=1.0, xMin, xMax, yMin, yMax)
 {
   tic(msg="mkFractionedFlowData")
   # prepare subset extraction without border machine noise
-  border <- list(c(xMin,xMax+fdo@x@min), c(yMin,yMax+fdo@y@min)) # define subset area
+  border <- list(c(xMin,xMax), c(yMin,yMax)) # define subset area
   names(border) <- c(fdo@xChannel, fdo@yChannel)
   denoised <- rectangleGate(filterId="Noise",  .gate = border) # filter noise
   denoised.subset <- Subset(fdo@flowFrame, denoised)

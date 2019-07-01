@@ -5,7 +5,7 @@ source("classes.R")
 
 # create plot of the (possibly sampling reduced) input data.
 
-plotInputData <- function (data, logScaled, imageFormat = "png")
+plotInputData <- function (data, logScaled, imageFormat = "png", prefix="")
 {
   # needed, because some data objects will hold more than 2 dimensions
   xchan <- data@data@x
@@ -15,7 +15,7 @@ plotInputData <- function (data, logScaled, imageFormat = "png")
   # pretty picture
   if (imageFormat=="png")
   {
-    png(file=sprintf("%5.3f_sample.png", data@fraction), bg = "white", width = 12, height = 12, units = 'in', res = 300)
+    png(file=sprintf("%s%5.3f_sample.png", prefix, data@fraction), bg = "white", width = 12, height = 12, units = 'in', res = 300)
   } else if (imageFormat=="svg")
   {
     svg(filename=sprintf("%5.3f_sample.svg",data@fraction),width = 12, height = 12, pointsize = 12, bg = "white")

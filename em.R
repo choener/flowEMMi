@@ -68,9 +68,11 @@ flowEMMiSampled<-function ( flowDataObject, initFraction, inits, numClusters, us
     if (is.null(em) || em@logL < em_@logL)
     {
       em <- em_
-      #tic(msg="plotting input data")
-      #plotInputData(pd, logScaled = useLogScale, imageFormat = imageFormat)
-      #toc()
+      if (i == 1) { # plot only the first subset
+        tic(msg="plotting input data")
+        plotInputData(pd, logScaled = useLogScale, imageFormat = imageFormat, prefix=sprintf("%d_", i))
+        toc()
+      }
     }
   } # i in inits
   return (em)
@@ -78,7 +80,14 @@ flowEMMiSampled<-function ( flowDataObject, initFraction, inits, numClusters, us
 
 # Run the flowEMMi algorithm on the full input data.
 
-flowEMMiFull<-function ( em, flowDataObject, numClusters, finalFraction, useLogScale, imageFormat, xMin, xMax, yMin, yMax, epsilon, verbose=FALSE, ...)
+flowEMMiFull<-function ( em, flowDataObject
+                        , finalFraction
+                        , numClusters
+                        , xMin, xMax, yMin, yMax
+                        , epsilon
+                        #, useLogScale
+                        #, imageFormat
+                        , verbose=FALSE)
 {
   pd <- mkFractionedFlowData (fdo=flowDataObject
                              ,fraction = finalFraction
@@ -148,18 +157,20 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
     # set up labels in a 1-step em
     em <- flowEMMiFull( em=em_, flowDataObject=fdo,
                       , finalFraction=finalFraction
-                      , numClusters=c, useLogScale=useLogScale, imageFormat=imageFormat
+                      , numClusters=c
                       , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
                       , epsilon=100 * convergenceEpsilon
-                      , verbose=T
+                      #, useLogScale=useLogScale, imageFormat=imageFormat
+                      #, verbose=T
                       )
     pre <- getLabels(em)
     em <- flowEMMiFull( em=em, flowDataObject=fdo,
                       , finalFraction=finalFraction
-                      , numClusters=c, useLogScale=useLogScale, imageFormat=imageFormat
+                      , numClusters=c
                       , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
                       , epsilon=convergenceEpsilon
-                      , verbose=T
+                      #, useLogScale=useLogScale, imageFormat=imageFormat
+                      #, verbose=T
                       )
     ls <- getLabels(em)
     crosses <- table(pre,ls)
@@ -175,12 +186,33 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   # TODO find best LL, return 
   lls <- lapply(emsFull, function(e) { e@logL })
   llmax <- which.max (lls) + minStart-1
-  print(which.max(lls))
-  print(minStart)
-  print(lls)
-  print(llmax)
+  #print(which.max(lls))
+  #print(minStart)
+  #print(lls)
+  #print(llmax)
   bestem <- emsFull[[which.max(lls)]]
   write(getLabels(bestem), file=sprintf("best_%d_labels_%f_logL.dat", llmax, bestem@logL))
+
+  # relabel data, in particular if we have inclusion/exclusion boxes
+  flowEMMiRelabel <- function (em_,c) {
+    print("starting relabel")
+    em <- flowEMMiFull( em=em_, flowDataObject=fdo,
+                      , finalFraction=finalFraction
+                      , numClusters=c
+                      , xMin=0, xMax=100000
+                      , yMin=0, yMax=100000
+                      #, xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
+                      , epsilon=100 * convergenceEpsilon
+                      #, useLogScale=useLogScale, imageFormat=imageFormat
+                      #, verbose=T
+                      )
+    return(em)
+  } # relabelling
+  tic(msg="rerun with full relabelling")
+  bestrel <- flowEMMiRelabel(bestem,llmax)
+  toc()
+  write(getLabels(bestrel), file=sprintf("best_relabel_%d_labels_%f_logL.dat", llmax, bestrel@logL))
+
 
   error ()
 
