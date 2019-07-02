@@ -49,6 +49,17 @@ opts <- parse_args(parser)
 
 
 
+# BIC criterion
+
+bic <- function (em) {
+  numPoints <- nrow(em@weight)
+  numParams <- (ncol(em@mu)-1) * 6 # 2 mu, 3 sigma, 1 weight # without background distribution
+  logL <- em@logL
+  # ln(n)*k - 2ln(LL), but we still want to maximize
+  bic <- logL - 0.5 * (log(numPoints) * numParams)
+  return(bic)
+}
+
 # run the sampled algorithm
 #
 # Finds for a given number of clusters the best initialization based on
@@ -131,20 +142,21 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   toc()
 
   # find best number of clusters
-  bestLL <-NULL
+  bestLL <-1
   for (b in 1:length(ems))
   {
-    if (is.null(bestLL) || ems[[bestLL]]@logL < ems[[b]]@logL)
+    # if (is.null(bestLL) || ems[[bestLL]]@logL < ems[[b]]@logL)
+    if (bic(ems[[bestLL]]) < bic(ems[[b]]))
     {
       bestLL <- b
     }
   }
-  lapply(ems, function(e) { print(e@logL) })
-  print(bestLL)
   emsbestll <- ems[[bestLL]]
+  tic(msg="plotting sampled took ...")
   plotInputData(emsbestll@data[[1]], labels = getLabels(emsbestll), mu=emsbestll@mu, sigma=emsbestll@sigma,
                 logScaled = useLogScale, imageFormat = imageFormat, prefix=sprintf("sampled-%d-labels", bestLL)
   )
+  toc()
 
   # around best number of clusters, run flowEMMi again
   tic(msg="full EM run on best subset of clusters")
@@ -189,13 +201,10 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   emsFull<-mclapply (minStart:min(maxClusters,bestLL+clusterbracket), parFull, mc.cores=numCores)
   toc()
 
-  # TODO find best LL, return 
-  lls <- lapply(emsFull, function(e) { e@logL })
+  # TODO find best LL
+  tic(msg="finding and plotting best LL took ...")
+  lls <- lapply(emsFull, bic)
   llmax <- which.max (lls) + minStart-1
-  #print(which.max(lls))
-  #print(minStart)
-  #print(lls)
-  #print(llmax)
   bestem <- emsFull[[which.max(lls)]]
   write(getLabels(bestem), file=sprintf("best_%d_labels_%f_logL.dat", llmax-1, bestem@logL))
 
@@ -203,6 +212,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   plotInputData(bestem@data[[1]], labels = getLabels(bestem), mu=bestem@mu, sigma=bestem@sigma,
                 logScaled = useLogScale, imageFormat = imageFormat, prefix=sprintf("best-%d-labels",llmax-1)
   )
+  toc()
 
   # relabel data, in particular if we have inclusion/exclusion boxes
   flowEMMiRelabel <- function (em_,c) {
@@ -229,10 +239,12 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   tic(msg="rerun with full relabelling")
   bestrel <- flowEMMiRelabel(bestem,llmax)
   toc()
+  tic(msg="plotting best relabelled took ...")
   write(getLabels(bestrel), file=sprintf("best_relabel_%d_labels_%f_logL.dat", llmax-1, bestrel@logL))
   plotInputData(bestrel@data[[1]], labels=getLabels(bestrel), mu=bestrel@mu, sigma=bestrel@sigma,
                 logScaled = useLogScale, imageFormat = imageFormat, prefix=sprintf("relabel-%d-labels",llmax-1)
   )
+  toc()
 } # flowEMMi
 
 

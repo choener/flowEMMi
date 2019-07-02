@@ -36,7 +36,7 @@ iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData,verbose=FA
   }
   stepDelta <- Inf
   iteration <- 0
-  while (iteration < 2 || stepDelta > deltaThreshold)
+  while (iteration < 11 || stepDelta > deltaThreshold)
   {
     prevLL <- em@logL
     emNew <- emStep (em, flowData)
@@ -49,7 +49,7 @@ iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData,verbose=FA
     ws_ <- c(em@clusterProbs, 0, 0, 0)
     weights <-sprintf("%4.3f %4.3f %4.3f ...",ws_[1], ws_[2], ws_[3])
     poss <- "" # sprintf("%020s", toString (em@mu))
-    if (verbose && (iteration %% 10 == 0)) {
+    if (verbose && (iteration %% 1 == 0)) {
       cat (sprintf("%5d %14.4f    %s %s\n", iteration, stepDelta, weights, poss))
     }
     iteration <- iteration +1

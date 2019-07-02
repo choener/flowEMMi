@@ -63,13 +63,8 @@ plotInputData <- function (data,
          ,ylim=limitsC(ychan)
          ,xlab=xchan@channel
          ,ylab=ychan@channel)
-    print(mu)
-    print(sigma)
     if (! is.null(mu)) { # we have gates and shall draw them
       for (i in 2:length(sigma)) {
-        print(i)
-        print(mu[,i])
-        print(sigma[[i]])
         ellipse(mu = mu[,i],
                 sigma = sigma[[i]],
                 alpha = 0.05
