@@ -36,10 +36,10 @@ iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData,verbose=FA
   }
   stepDelta <- Inf
   iteration <- 0
-  while (iteration < 11 || stepDelta > deltaThreshold)
+  while ((iteration<1000) && (iteration < 11 || abs(stepDelta) > deltaThreshold))
   {
     prevLL <- em@logL
-    emNew <- emStep (em, flowData)
+    emNew <- emStep (em, flowData, iteration)
     if (! (is.nan(emNew@logL)))
     {
       em<-emNew
@@ -49,11 +49,12 @@ iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData,verbose=FA
     ws_ <- c(em@clusterProbs, 0, 0, 0)
     weights <-sprintf("%4.3f %4.3f %4.3f ...",ws_[1], ws_[2], ws_[3])
     poss <- "" # sprintf("%020s", toString (em@mu))
-    if (verbose && (iteration %% 1 == 0)) {
+    if (verbose && (iteration %% 10 == 0)) {
       cat (sprintf("%5d %14.4f    %s %s\n", iteration, stepDelta, weights, poss))
     }
     iteration <- iteration +1
   }
+  cat (sprintf("%5d %14.4f\n", iteration, stepDelta))
   toc()
   return (em)
 }
@@ -94,7 +95,7 @@ emInitWithPrior <- function (emOld, flowData)
 
 # a single EM step
 
-emStep <- function (em,flowData)
+emStep <- function (em,flowData, iteration)
 {
   # calculate mu based on cluster-weight for each data point, and actual data
   # points
@@ -104,24 +105,28 @@ emStep <- function (em,flowData)
   ymean <- mean(flowData@sampled[,2])
   mu[,1] <- c(xmean,ymean)
   # CHZS
-  return (emCommon(em, flowData, em@weight, mu))
+  return (emCommon(em, flowData, em@weight, mu, iteration))
 }
 
 
 
 # shared between init/step
 
-emCommon <- function(em, flowData, weight, mu)
+emCommon <- function(em, flowData, weight, mu, iteration=100)
 {
+  itr <- 0.1 * min(1000, max (10,iteration))
+  # clamp <- max(1, maxIteration / (max(1,iteration)))
+  #clamp <- (itr / (1+itr))^2 # [0.25 .. 1.0]
+  clamp <- (0.5 + (itr / (1+itr))) # [1.0 .. 1.5]
   # average cluster probability, averaged over all samples
   clusterProbs    <- eigenMeanClusterProb(weight)
   # calculate the sample covariance matrices, one for each cluster, as
   # sigma[1]...sigma[n]
   sigma           <- eigenSigma(weight,mu,flowData@sampled)
   # CHZS
-  clusterProbs[[1]] <- 0.10
+  clusterProbs[[1]] <- max (0.01, clusterProbs[[1]]) # at least 1% background
   sigmaclamped <- lapply(sigma, function(s) {
-                         t <- apply(s, c(1,2), function(v) { sign(v) * min(abs(v),2500^2) })
+                         t <- apply(s, c(1,2), function(v) { sign(v) * min(abs(v),(2500*clamp)^2) })
                          return (t)
     })
   sigmaclamped[[1]] <- 25000^2 * matrix(c(1,0,0,1), nrow=2, ncol=2)

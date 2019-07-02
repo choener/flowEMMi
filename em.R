@@ -134,8 +134,8 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
     em <- flowEMMiSampled( flowDataObject=fdo, initFraction=initFraction, inits=numberOfInits
                          , numClusters=c, useLogScale=useLogScale, imageFormat=imageFormat
                          , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
-                         , epsilon=convergenceEpsilon / initFraction
-                         , verbose=F)
+                         , epsilon=convergenceEpsilon / (max (sqrt(initFraction), 1.0))
+                         , verbose=T)
     return (em)
   }
   ems<-mclapply (minClusters:maxClusters, parSampled, mc.cores=numCores)
@@ -178,10 +178,12 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                                ,fraction = finalFraction
                                ,xMin=xMin, xMax=xMax
                                ,yMin=yMin, yMax=yMax)
+    tic(msg="rederived densities")
     emI <- emInitWithPrior (em=em_, flowData=pd)
     em <- emDensitiesLogL(em=emI, flowData=pd, mu=em_@mu, sigma=em_@sigma, clusterProbs=em_@clusterProbs)
     em@data<-list(pd)
     pre <- getLabels(em)
+    toc()
     em <- flowEMMiFull( em=em, flowDataObject=fdo,
                       , finalFraction=finalFraction
                       , numClusters=c
@@ -191,10 +193,12 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                       #, useLogScale=useLogScale, imageFormat=imageFormat
                       )
     ls <- getLabels(em)
+    tic(msg="crosses")
     crosses <- table(pre,ls)
     print(crosses)
     print(table(ls))
     print(em@mu)
+    toc()
     write(ls, file=sprintf("label_assignment_%d.dat",c-1))
     return (em)
   }
