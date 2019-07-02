@@ -123,7 +123,9 @@ createData <- function () {
 
   # we now have loaded all user gates and can proceed with f-measure calculations
 
-  df <- data.frame(time=double(), f1=double(), epsilon=double(), label=character(), user=character(), gatefilename=character(), numgates=integer(), algonumgates=integer()
+  df <- data.frame(time=double(),
+                   f1=double(), tp=double(), fn=double(), fp=double(),
+                   epsilon=double(), label=character(), user=character(), gatefilename=character(), numgates=integer(), algonumgates=integer()
                    ,stringsAsFactors=FALSE)
 
   # flowEMMI and flowMerge sources
@@ -169,12 +171,15 @@ createData <- function () {
             numOfGates <- length(as.vector(table(gLabelVec)))
             algoNumOfGates <- length(as.vector(table(algolabels)))
             f1 <- fOneFromCon(c)
+            tp <- c[[1]]
+            fn <- c[[2]]
+            fp <- c[[3]]
             print(f1)
             lbl <- sprintf("%s", algo)
             timefname <- Sys.glob(sprintf("./out-flow%s/0%s-1e%s/test.out",algo, test, eN))
             timelines <- readLines(timefname)
             seconds <- as.double(str_extract(timelines[[1]],"(\\.|[:digit:])+"))
-            df[nrow(df)+1,] = list(seconds, f1, eV, lbl, user, test, numOfGates, algoNumOfGates)
+            df[nrow(df)+1,] = list(seconds, f1, tp, fn, fp, eV, lbl, user, test, numOfGates, algoNumOfGates)
             print(df)
           } # file.exists (algofname)
         } # es
