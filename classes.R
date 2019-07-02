@@ -1,6 +1,7 @@
 
-library("tictoc")
-library (flowCore)
+library(tictoc)
+library(flowCore)
+library(mvtnorm)
 
 # limits
 setClass (Class="Limits", slots=c(channel="character", min="numeric", max="numeric"))
@@ -96,13 +97,6 @@ mkEMRun <- function ()
 # include the newest mu, sigma, logL values in the EMRun
 updateEMRun <- function (em, mu, sigma, weight, clusterProbs, logL)
 {
-#  n <- 1 + length (em@mu)
-#  # store old data
-#  em@mus[n] <- mu
-#  em@sigmas[n] <- sigma
-#  em@weights[n] <- w
-#  em@logLs[n] <- logL
-  # setup new
   em@mu <- mu
   em@sigma <- sigma
   em@weight <- weight
@@ -115,16 +109,16 @@ updateEMRun <- function (em, mu, sigma, weight, clusterProbs, logL)
 
 # provide a label vector for each data element in an @em@ structure. If below
 # the cutoff, the label is set "0" to indicate background.
-getLabels <- function (em, cutoff=0.5) {
+getLabels <- function (em, cutoff=0.05) {
   ms <- apply(em@weight, 1, which.max)
   f <- function (i) {
     l <- ms[i]
-    if (em@weight[i,l] < cutoff) {
+    if (l == 1 || em@weight[[i,l]] < cutoff) {
       l <- 0
     }
     l
   }
   ms <- sapply(1:length(ms), f)
-  ms
+  return (ms)
 }
 

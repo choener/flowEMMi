@@ -36,7 +36,7 @@ iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData,verbose=FA
   }
   stepDelta <- Inf
   iteration <- 0
-  while (stepDelta > deltaThreshold)
+  while (iteration < 2 || stepDelta > deltaThreshold)
   {
     prevLL <- em@logL
     emNew <- emStep (em, flowData)
@@ -99,6 +99,11 @@ emStep <- function (em,flowData)
   # calculate mu based on cluster-weight for each data point, and actual data
   # points
   mu<-eigenMu(em@weight,flowData@sampled)
+  # CHZS fixing cluster 1
+  xmean <- mean(flowData@sampled[,1])
+  ymean <- mean(flowData@sampled[,2])
+  mu[,1] <- c(xmean,ymean)
+  # CHZS
   return (emCommon(em, flowData, em@weight, mu))
 }
 
@@ -113,6 +118,20 @@ emCommon <- function(em, flowData, weight, mu)
   # calculate the sample covariance matrices, one for each cluster, as
   # sigma[1]...sigma[n]
   sigma           <- eigenSigma(weight,mu,flowData@sampled)
+  # CHZS
+  clusterProbs[[1]] <- 0.10
+  sigmaclamped <- lapply(sigma, function(s) {
+                         t <- apply(s, c(1,2), function(v) { sign(v) * min(abs(v),2500^2) })
+                         return (t)
+    })
+  sigmaclamped[[1]] <- 25000^2 * matrix(c(1,0,0,1), nrow=2, ncol=2)
+  # CHZS
+  emNew <- emDensitiesLogL (em, flowData, mu, sigmaclamped, clusterProbs)
+  return (emNew)
+}
+
+emDensitiesLogL <- function (em, flowData, mu, sigma, clusterProbs)
+{
   densities       <- eigenDensitiesAtSamples(clusterProbs ,mu,sigma,flowData@sampled)
   logL            <- eigenLogLikelihood(densities) #compute log likelihood
   normedDensities <- eigenRowNormalize(densities)

@@ -23,7 +23,14 @@ plotInputData <- function (data,
   ychan <- data@data@y
   xy <- data@sampled
   cfacts <- as.numeric(as.factor(labels))
-  colorfactors <- if (is.null(labels)) "black" else { wheel("darkblue", num=length(table(labels)))[cfacts] }
+  colorfactors <- NULL
+  if (is.null(labels)) {
+    colorfactors <- "black"
+  } else {
+    w <- wheel("darkblue", num=length(table(labels)))
+    w[[1]] <- "grey"
+    colorfactors <- w[cfacts]
+  }
   #xy <- cbind(data@data[,data@x@channel], data@data[,data@y@channel])
   # pretty picture
   if (imageFormat=="png")
@@ -59,7 +66,7 @@ plotInputData <- function (data,
     print(mu)
     print(sigma)
     if (! is.null(mu)) { # we have gates and shall draw them
-      for (i in 1:length(sigma)) {
+      for (i in 2:length(sigma)) {
         print(i)
         print(mu[,i])
         print(sigma[[i]])
