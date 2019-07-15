@@ -229,6 +229,47 @@ plotFromData <- function (fname) {
   # points ( time ~ f1, data=ms, pch="M", col=c("red","green","blue")[as.numeric(as.factor(epsilon))] )
 }
 
+
+
+# TODO make more nice
+
+runMock <- function () {
+  wsp <- openWorkspace ("./mock/WithCells.wsp")
+  gs <- parseWorkspace(wsp, path="./mock/", 1)
+
+  # liquid stuff
+  gLiquid <- gs[[1]]
+  idx <- 1
+  l <- nrow(getData(gs[[1]]))
+  lvec <- integer(l)
+  for (g in (tail(getNodes(gs[[1]]),-1))) {
+    bs <- getIndices(gs[[1]], g)
+    lvec <- mapply (function (c,b) { if (b) {idx} else {c} }, lvec, bs)
+    idx <- idx+1
+  }
+  lAL <- scan("./mock/susann-70/best_relabel_7_labels_-4172915.590810_logL.dat")
+  c <- calcConfusion(lvec,lAL)
+  f1 <- fOneFromCon(c)
+  print(c)
+  print(f1)
+
+  # plate stuff
+  gPlate <- gs[[2]]
+  idx <- 1
+  l <- nrow(getData(gs[[2]]))
+  lvec <- integer(l)
+  for (g in (tail(getNodes(gs[[2]]),-1))) {
+    bs <- getIndices(gs[[2]], g)
+    lvec <- mapply (function (c,b) { if (b) {idx} else {c} }, lvec, bs)
+    idx <- idx+1
+  }
+  lAL <- scan("./mock/susann-1.19/best_relabel_6_labels_-5379020.307258_logL.dat")
+  c <- calcConfusion(lvec,lAL)
+  f1 <- fOneFromCon(c)
+  print(c)
+  print(f1)
+}
+
 #ws <- openWorkspace("./wsp/florian/Gating_Test_FS.wsp")
 #print (ws)
 #summary (ws)
