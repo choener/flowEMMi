@@ -9,6 +9,9 @@ library (lattice)
 library (flowWorkspace)
 library (CytoML)
 library (stringr)
+library(flowCore)
+
+library (SamSPECTRAL)
 
 
 # given two vectors of label assignments, calculate the TP, FT, TN, FN absolute
@@ -268,6 +271,18 @@ runMock <- function () {
   f1 <- fOneFromCon(c)
   print(c)
   print(f1)
+}
+
+prepSpectral <- function (fname, t="linearize") {
+  fcs <<- read.FCS (fname, transformation=t)
+  ds.x <<- exprs(fcs$"PMT 1")
+  ds.y <<- exprs(fcs$"PMT 9")
+  ds <<- cbind(ds.x,ds.y)
+  ds.log <<- log(ds)
+}
+
+runSpectral <- function (which,s,f) {
+  ds.ls <<- SamSPECTRAL(which, dimension=c(1,2), normal.sigma=s, separation.factor=f)
 }
 
 #ws <- openWorkspace("./wsp/florian/Gating_Test_FS.wsp")

@@ -82,7 +82,7 @@ let
     propagatedBuildInputs = depends;
     nativeBuildInputs = depends;
   };
-  rPcompare = with rP; [ flowClust rFlowMerge ];
+  rPcompare = with rP; [ flowClust rFlowMerge SamSPECTRAL flowMeans ];
 
   # final environment
   flowEmmiR = rWrapper.override { packages = rPemmi ++ rPcompare; };
