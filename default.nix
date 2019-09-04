@@ -11,7 +11,8 @@ let
   rP = (rPackages.override {
     overrides = (rec {
       ncdfFlow = rPackages.ncdfFlow.overrideAttrs (old: rec {
-        depends = old.depends ++ [ zlib ];
+        #depends = old.depends ++ [ zlib ];
+        nativeBuildInputs = old.nativeBuildInputs ++ [zlib];
       });
       RcppParallel = rPackages.RcppParallel.overrideAttrs (old: rec {
         patchPhase = ''
