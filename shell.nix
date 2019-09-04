@@ -2,9 +2,12 @@
 # need to call ./R explicitly
 
 { nixpkgs ? import <nixpkgs> {} }:
-#{ nixpkgs ? import <unstable> {} }:
+
+# CHzS: these are some nix url suffixes that can be used for pinning. They come
+# without the sha, since we trust github not to modify the repository history.
 
 # working nixos 19.03: 30a82bba734
+# 2019-09-04: d6bdaea5dd2fb1c9a7c363b0fda17f3f432e7fa6
 
 # TODO fix the import
 #nixpkgs = import (builtins.fetchTarball {
