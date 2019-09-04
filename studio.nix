@@ -24,5 +24,5 @@ with nixpkgs;
 let
   pkg = callPackage ./. {};
 in
-  pkg.flowEmmiR
+  pkg.flowEmmiStudio
 

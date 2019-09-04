@@ -3,7 +3,7 @@
 
  # with import <nixpkgs> {};
 
-{ rWrapper, rPackages, zlib, parallel, libxml2, fetchurl, fetchFromGitHub, recurseIntoAttrs }:
+{ rWrapper, rstudioWrapper, rPackages, zlib, parallel, libxml2, fetchurl, fetchFromGitHub, recurseIntoAttrs }:
 
 let
 
@@ -86,6 +86,9 @@ let
 
   # final environment
   flowEmmiR = rWrapper.override { packages = rPemmi ++ rPcompare; };
+  flowEmmiStudio = rstudioWrapper.override { packages = rPemmi ++ rPcompare; };
 in
-  flowEmmiR
+  { flowEmmiR = flowEmmiR;
+    flowEmmiStudio = flowEmmiStudio;
+  }
 
