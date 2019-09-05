@@ -3,7 +3,7 @@
 
  # with import <nixpkgs> {};
 
-{ rWrapper, rstudioWrapper, rPackages, zlib, parallel, libxml2, fetchurl, fetchFromGitHub, recurseIntoAttrs }:
+{ rWrapper, rstudioWrapper, rPackages, zlib, parallel, libxml2, fetchurl, fetchFromGitHub, recurseIntoAttrs, qt5, stdenv }:
 
 let
 
@@ -90,6 +90,9 @@ let
   flowEmmiStudio = rstudioWrapper.override { packages = rPemmi ++ rPcompare; };
 in
   { flowEmmiR = flowEmmiR;
-    flowEmmiStudio = flowEmmiStudio;
+    flowEmmiStudio = stdenv.mkDerivation {
+      name = "studio";
+      buildInputs = [ flowEmmiStudio qt5.qtbase ];
+    };
   }
 
