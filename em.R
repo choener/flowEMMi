@@ -115,7 +115,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                          ,minClusters=8,maxClusters=15,clusterbracket=3
                          ,prior=FALSE
                          ,pi_prior,mu_prior,sigma_prior,separation=TRUE,numberOfInits=5,total=FALSE,alpha=.05,imageFormat="png",verbose=TRUE
-                         ,disableParallelism=FALSE
+                         ,disableParallelism=TRUE
                          ,convergenceEpsilon=0.01 )
 {
   #mat<-exprs(frame)
@@ -123,6 +123,10 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
 
   # the full flow data
   fdo <- mkFlowDataObject(frame=frame,xChannel=ch1, yChannel=ch2)
+
+  # assert that we have data in the channels
+  stopifnot ( length (fdo@data[fdo@xChannel]) > 0 )
+  stopifnot ( length (fdo@data[fdo@yChannel]) > 0 )
 
   # setup parallelism
   numCores <- if (disableParallelism) {1} else {max(1, detectCores())}
@@ -253,20 +257,21 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
 
 
 # load sample
-fcsData <- read.FCS(opts$file,alter.names = TRUE,transformation = FALSE)
-# run actual flowEMMi algorithm
-results <- flowEMMi( frame = fcsData
-                   , ch1=opts$channelx, ch2=opts$channely
-                   , xMin = opts$xstart, xMax = opts$xend, yMin=opts$ystart, yMax=opts$yend
-                   , initFraction = opts$initfraction
-                   , finalFraction = opts$finalfraction
-                   , prior = opts$prior
-                   , separation = opts$separation
-                   , numberOfInits = opts$inits
-                   , useLogScale = opts$log
-                   , alpha = opts$alpha, imageFormat = opts$imgformat
-                   , minClusters = opts$mincluster, maxClusters = opts$maxcluster, clusterbracket=opts$clusterbracket
-                   , disableParallelism = opts$disableparallelism
-                   , convergenceEpsilon = opts$convergence
-                   )
-
+if (opts$file != "") {
+  fcsData <- read.FCS(opts$file,alter.names = TRUE,transformation = FALSE)
+  # run actual flowEMMi algorithm
+  results <- flowEMMi( frame = fcsData
+                     , ch1=opts$channelx, ch2=opts$channely
+                     , xMin = opts$xstart, xMax = opts$xend, yMin=opts$ystart, yMax=opts$yend
+                     , initFraction = opts$initfraction
+                     , finalFraction = opts$finalfraction
+                     , prior = opts$prior
+                     , separation = opts$separation
+                     , numberOfInits = opts$inits
+                     , useLogScale = opts$log
+                     , alpha = opts$alpha, imageFormat = opts$imgformat
+                     , minClusters = opts$mincluster, maxClusters = opts$maxcluster, clusterbracket=opts$clusterbracket
+                     , disableParallelism = opts$disableparallelism
+                     , convergenceEpsilon = opts$convergence
+                     )
+}
