@@ -121,12 +121,12 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   #mat<-exprs(frame)
   stopifnot (initFraction >  0.0)
 
+  # assert that we have data in the channels
+  stopifnot ( ch1 %in% colnames(frame) )
+  stopifnot ( ch2 %in% colnames(frame) )
+
   # the full flow data
   fdo <- mkFlowDataObject(frame=frame,xChannel=ch1, yChannel=ch2)
-
-  # assert that we have data in the channels
-  stopifnot ( length (fdo@data[fdo@xChannel]) > 0 )
-  stopifnot ( length (fdo@data[fdo@yChannel]) > 0 )
 
   # setup parallelism
   numCores <- if (disableParallelism) {1} else {max(1, detectCores())}
