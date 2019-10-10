@@ -125,6 +125,9 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   stopifnot ( ch1 %in% colnames(frame) )
   stopifnot ( ch2 %in% colnames(frame) )
 
+  # need at least two clusters, because we need background
+  stopifnot ( minClusters>1 )
+
   # the full flow data
   fdo <- mkFlowDataObject(frame=frame,xChannel=ch1, yChannel=ch2)
 

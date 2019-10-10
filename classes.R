@@ -58,6 +58,11 @@ mkFractionedFlowData <- function(fdo, fraction=1.0, xMin, xMax, yMin, yMax)
   denoised.subset <- Subset(fdo@flowFrame, denoised)
   denoisedData<-mkFlowDataObject(frame=denoised.subset, xChannel=fdo@xChannel, yChannel=fdo@yChannel)
   # subsample every nth element
+  if (  length (denoisedData@data[,fdo@xChannel]) < 1
+     || length (denoisedData@data[,fdo@yChannel]) < 1 ) {
+    cat(sprintf("subset area selection leaves no elements left, modify xMin/xMax, yMin/yMax"))
+    stop()
+  }
   vs<-cbind(denoisedData@data[,fdo@xChannel],denoisedData@data[,fdo@yChannel]) #both dimensions as matrix
   # make sure to keep data ordered if no subsampled is requested
   if (fraction>=1) {
