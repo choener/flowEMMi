@@ -27,7 +27,9 @@ plotInputData <- function (data,
   if (is.null(labels)) {
     colorfactors <- "black"
   } else {
+    pdf(file=NULL)
     w <- wheel("darkblue", num=length(table(labels)))
+    dev.off()
     w[[1]] <- "grey"
     colorfactors <- w[cfacts]
   }

@@ -149,6 +149,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   toc()
 
   # find best number of clusters
+  tic(msg="finding best LL in ems")
   bestLL <-1
   for (b in 1:length(ems))
   {
@@ -158,6 +159,10 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
       bestLL <- b
     }
   }
+  print(length(ems))
+  print(bestLL)
+  print(bic(ems[[bestLL]]))
+  toc()
   emsbestll <- ems[[bestLL]]
   tic(msg="plotting sampled took ...")
   plotInputData(emsbestll@data[[1]], labels = getLabels(emsbestll), mu=emsbestll@mu, sigma=emsbestll@sigma,
@@ -167,12 +172,13 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
 
   # around best number of clusters, run flowEMMi again
   tic(msg="full EM run on best subset of clusters")
-  minStart <-max(minClusters,bestLL-clusterbracket)
-  parFull <- function (c)
+  minStart <- max(1,bestLL-clusterbracket)
+  maxStart <- min(length(ems),bestLL+clusterbracket)
+  parFull <- function (idx)
   {
-    idx<-c-minStart+1
+    c <- minClusters + idx - 1
     cat(sprintf("full calculation with %d clusters, idx %d\n",c,idx))
-    em_<-ems[[c-(minClusters-1)]]
+    em_<-ems[[idx]]
     # set up labels in a 1-step em
     # em <- flowEMMiFull( em=em_, flowDataObject=fdo,
     #                   , finalFraction=finalFraction
@@ -209,7 +215,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
     write(ls, file=sprintf("label_assignment_%d.dat",c-1))
     return (em)
   }
-  emsFull<-mclapply (minStart:min(maxClusters,bestLL+clusterbracket), parFull, mc.cores=numCores)
+  emsFull<-mclapply (minStart:maxStart, parFull, mc.cores=numCores)
   toc()
 
   # TODO find best LL
