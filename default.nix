@@ -60,6 +60,7 @@ let
                 ncdfFlow # needs override
                 RBGL RColorBrewer Rcpp Rgraphviz RProtoBufLib scales stringr XML
                 libxml2 digest RcppParallel # new deps
+                tidyverse
               ];
     propagatedBuildInputs = depends;
     nativeBuildInputs = depends;

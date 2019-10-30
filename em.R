@@ -115,11 +115,18 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
                          ,minClusters=8,maxClusters=15,clusterbracket=3
                          ,prior=FALSE
                          ,pi_prior,mu_prior,sigma_prior,separation=TRUE,numberOfInits=5,total=FALSE,alpha=.05,imageFormat="png",verbose=TRUE
-                         ,disableParallelism=FALSE
+                         ,disableParallelism=TRUE
                          ,convergenceEpsilon=0.01 )
 {
   #mat<-exprs(frame)
   stopifnot (initFraction >  0.0)
+
+  # assert that we have data in the channels
+  stopifnot ( ch1 %in% colnames(frame) )
+  stopifnot ( ch2 %in% colnames(frame) )
+
+  # need at least two clusters, because we need background
+  stopifnot ( minClusters>1 )
 
   # the full flow data
   fdo <- mkFlowDataObject(frame=frame,xChannel=ch1, yChannel=ch2)
@@ -142,6 +149,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   toc()
 
   # find best number of clusters
+  tic(msg="finding best LL in ems")
   bestLL <-1
   for (b in 1:length(ems))
   {
@@ -151,6 +159,10 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
       bestLL <- b
     }
   }
+  print(length(ems))
+  print(bestLL)
+  print(bic(ems[[bestLL]]))
+  toc()
   emsbestll <- ems[[bestLL]]
   tic(msg="plotting sampled took ...")
   plotInputData(emsbestll@data[[1]], labels = getLabels(emsbestll), mu=emsbestll@mu, sigma=emsbestll@sigma,
@@ -160,12 +172,13 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
 
   # around best number of clusters, run flowEMMi again
   tic(msg="full EM run on best subset of clusters")
-  minStart <-max(minClusters,bestLL-clusterbracket)
-  parFull <- function (c)
+  minStart <- max(1,bestLL-clusterbracket)
+  maxStart <- min(length(ems),bestLL+clusterbracket)
+  parFull <- function (idx)
   {
-    idx<-c-minStart+1
+    c <- minClusters + idx - 1
     cat(sprintf("full calculation with %d clusters, idx %d\n",c,idx))
-    em_<-ems[[c-(minClusters-1)]]
+    em_<-ems[[idx]]
     # set up labels in a 1-step em
     # em <- flowEMMiFull( em=em_, flowDataObject=fdo,
     #                   , finalFraction=finalFraction
@@ -202,7 +215,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
     write(ls, file=sprintf("label_assignment_%d.dat",c-1))
     return (em)
   }
-  emsFull<-mclapply (minStart:min(maxClusters,bestLL+clusterbracket), parFull, mc.cores=numCores)
+  emsFull<-mclapply (minStart:maxStart, parFull, mc.cores=numCores)
   toc()
 
   # TODO find best LL
@@ -253,20 +266,21 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
 
 
 # load sample
-fcsData <- read.FCS(opts$file,alter.names = TRUE,transformation = FALSE)
-# run actual flowEMMi algorithm
-results <- flowEMMi( frame = fcsData
-                   , ch1=opts$channelx, ch2=opts$channely
-                   , xMin = opts$xstart, xMax = opts$xend, yMin=opts$ystart, yMax=opts$yend
-                   , initFraction = opts$initfraction
-                   , finalFraction = opts$finalfraction
-                   , prior = opts$prior
-                   , separation = opts$separation
-                   , numberOfInits = opts$inits
-                   , useLogScale = opts$log
-                   , alpha = opts$alpha, imageFormat = opts$imgformat
-                   , minClusters = opts$mincluster, maxClusters = opts$maxcluster, clusterbracket=opts$clusterbracket
-                   , disableParallelism = opts$disableparallelism
-                   , convergenceEpsilon = opts$convergence
-                   )
-
+if (opts$file != "") {
+  fcsData <- read.FCS(opts$file,alter.names = TRUE,transformation = FALSE)
+  # run actual flowEMMi algorithm
+  results <- flowEMMi( frame = fcsData
+                     , ch1=opts$channelx, ch2=opts$channely
+                     , xMin = opts$xstart, xMax = opts$xend, yMin=opts$ystart, yMax=opts$yend
+                     , initFraction = opts$initfraction
+                     , finalFraction = opts$finalfraction
+                     , prior = opts$prior
+                     , separation = opts$separation
+                     , numberOfInits = opts$inits
+                     , useLogScale = opts$log
+                     , alpha = opts$alpha, imageFormat = opts$imgformat
+                     , minClusters = opts$mincluster, maxClusters = opts$maxcluster, clusterbracket=opts$clusterbracket
+                     , disableParallelism = opts$disableparallelism
+                     , convergenceEpsilon = opts$convergence
+                     )
+}

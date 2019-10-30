@@ -58,6 +58,11 @@ mkFractionedFlowData <- function(fdo, fraction=1.0, xMin, xMax, yMin, yMax)
   denoised.subset <- Subset(fdo@flowFrame, denoised)
   denoisedData<-mkFlowDataObject(frame=denoised.subset, xChannel=fdo@xChannel, yChannel=fdo@yChannel)
   # subsample every nth element
+  if (  length (denoisedData@data[,fdo@xChannel]) < 1
+     || length (denoisedData@data[,fdo@yChannel]) < 1 ) {
+    cat(sprintf("subset area selection leaves no elements left, modify xMin/xMax, yMin/yMax"))
+    stop()
+  }
   vs<-cbind(denoisedData@data[,fdo@xChannel],denoisedData@data[,fdo@yChannel]) #both dimensions as matrix
   # make sure to keep data ordered if no subsampled is requested
   if (fraction>=1) {
@@ -109,8 +114,10 @@ updateEMRun <- function (em, mu, sigma, weight, clusterProbs, logL)
 
 # provide a label vector for each data element in an @em@ structure. If below
 # the cutoff, the label is set "0" to indicate background.
+
 getLabels <- function (em, cutoff=0.05, ksigma=2.0) {
   data <- em@data[[1]]
+  # for each cluster, have mean and standard deviation
   llss <- sapply(1:length(em@sigma), function(i)
                  {
                    m <- em@mu[,i]
@@ -126,14 +133,14 @@ getLabels <- function (em, cutoff=0.05, ksigma=2.0) {
     l <- ms[i]
     m <- em@mu[,l]
     s <- em@sigma[[l]]
-    bestll <- NULL # -99999999
+    bestll <- NULL
     if (!is.null(data)) {
       bestll <- dmvnorm(data@sampled[i,], mean=m, sigma=s, log=TRUE)
     }
     if (l == 1 || em@weight[[i,l]] < cutoff) {
       l <- 0
     }
-    if (!(is.null(bestll)) && l>0 && bestll < llss[1,l] - ksigma*llss[2,l]) {
+    if (!(is.null(bestll)) && (l<=0 || l>ncol(llss) || bestll < llss[1,l] - ksigma*llss[2,l])) {
       l <- 0
     }
     l
