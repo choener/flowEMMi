@@ -140,6 +140,10 @@ emDensitiesLogL <- function (em, flowData, mu, sigma, clusterProbs)
   densities       <- eigenDensitiesAtSamples(clusterProbs ,mu,sigma,flowData@sampled)
   logL            <- eigenLogLikelihood(densities) #compute log likelihood
   normedDensities <- eigenRowNormalize(densities)
+  if (is.nan(logL)) {
+    cat(sprintf("NaN in loglikelihood calculation, which should not happen anymore!"))
+    exit()
+  }
   return (updateEMRun(em=em, mu=mu, sigma=sigma, weight=normedDensities, clusterProbs=clusterProbs, logL=logL))
 }
 
