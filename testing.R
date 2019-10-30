@@ -37,6 +37,7 @@ results <- flowEMMi( frame = fcsData
   #                                                                               missing value where TRUE/FALSE needed                            missing value where TRUE/FALSE needed 
 
 # use the default parameters for start of x and y
+set.seed(1)
 results <- flowEMMi( frame = fcsData
                      , ch1="PMT.1", ch2="PMT.9"
                      , xMin = opts$xstart, xMax = opts$xend, yMin=opts$ystart, yMax=opts$yend
