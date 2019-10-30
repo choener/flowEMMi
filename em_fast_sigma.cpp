@@ -148,6 +148,7 @@ double eigenLogLikelihood(NumericMatrix densities) {
   Eigen::VectorXd lse = ds.array().rowwise().sum().array().log();
   // now, we have for each data-point the log(sum(weightedGaussian)), these
   // need to be summed up.
+  lse.unaryExpr([](double v) { return std::isfinite(v) ? v : 0.0; });
   return lse.sum();
 }
 
