@@ -1,6 +1,7 @@
 // -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 #include <RcppEigen.h>
 #include <list>
+#include <cmath>
 #include <iostream>
 using namespace std;
 using namespace Rcpp;
@@ -148,8 +149,24 @@ double eigenLogLikelihood(NumericMatrix densities) {
   Eigen::VectorXd lse = ds.array().rowwise().sum().array().log();
   // now, we have for each data-point the log(sum(weightedGaussian)), these
   // need to be summed up.
-  lse.unaryExpr([](double v) { return std::isfinite(v) ? v : 0.0; });
-  return lse.sum();
+  // It is possible that some values, due to numerical inaccuracies, produce NaNs. We replace those
+  // by "0" before summing up.
+  double r = 0;
+  int nana = 0;
+  for (int i = 0; i <lse.size(); i++) {
+    double k = lse[i];
+    if (isfinite (k) )
+    {
+      r += k;
+    } else
+    {
+      nana += 1;
+    }
+  };
+  if (nana) {
+    cout << lse.size() << " values, and no. nans: " << nana << endl;
+  };
+  return r;
 }
 
 
