@@ -125,8 +125,18 @@ emCommon <- function(em, flowData, weight, mu, iteration=100)
   sigma           <- eigenSigma(weight,mu,flowData@sampled)
   # CHZS
   clusterProbs[[1]] <- max (0.01, clusterProbs[[1]]) # at least 1% background
+  # apply the inline function on each covariance matrix in the list sigma
   sigmaclamped <- lapply(sigma, function(s) {
-                         t <- apply(s, c(1,2), function(v) { sign(v) * min(abs(v),(2500*clamp)^2) })
+                         x <- s[[1,1]]
+                         x <- max(1,min(x, (2500*clamp)^2))
+                         y <- s[[2,2]]
+                         y <- max(1,min(y, (2500*clamp)^2))
+                         c <- s[[1,2]]
+                         t <- matrix(c(x,c,c,y),nrow=2,ncol=2)
+                         # for each covariance matrix s, run the inline function over each scalar.
+                         #t <- apply(s, 1:2, function(v) {
+                         #  sign(v) * min(abs(v),(2500*clamp)^2)
+                         #})
                          return (t)
     })
   sigmaclamped[[1]] <- 25000^2 * matrix(c(1,0,0,1), nrow=2, ncol=2)
