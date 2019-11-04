@@ -129,6 +129,10 @@ NumericMatrix eigenDensitiesAtSamples(NumericVector clusterProbs, NumericMatrix 
         / L.determinant();
     responsibilities.col(i) = quadform.array() * p(i);
   }
+  // chzs, this is a really bad idea ...!
+  double konst = (65535-115)*(65535-143);
+  responsibilities.col(0).setConstant(p(0) / konst);
+  // no, really that was a very bad idea!
   return Rcpp::NumericMatrix(wrap(responsibilities));
 }
 
@@ -141,7 +145,7 @@ NumericMatrix eigenDensitiesAtSamples(NumericVector clusterProbs, NumericMatrix 
 // [[Rcpp::export]]
 double eigenLogLikelihood(NumericMatrix densities, double backgroundProportion) {
   // incoming weighted cluster probabilities for each data point: samples >< clusters
-  Eigen::Map<Eigen::MatrixXd> ds = as<Eigen::Map<Eigen::MatrixXd> >(densities); 
+  Eigen::Map<Eigen::MatrixXd> ds = as<Eigen::Map<Eigen::MatrixXd> >(densities);
   // row-wise (i.e. for each data point), sum over the weighted normal
   // distribution probabilities
   //
@@ -150,19 +154,19 @@ double eigenLogLikelihood(NumericMatrix densities, double backgroundProportion) 
   // Eigen::VectorXd lse = ds.array().rowwise().sum().array().log();
   Eigen::VectorXd lse = ds.array().rowwise().sum().array();
   // cb: die erste Spalte von ds (fuer background) muss wieder abgezogen werden:
-    Eigen::VectorXd backgroundProbs = ds.col(0);
-    lse = lse-backgroundProbs;
-    // hier tats??chliche xMax,xMin,yMax und yMin einfuegen
-    double tmp = backgroundProportion/((65535-115)*(65535-143));
-    // wie erstelle ich einen vektor, bei dem in jedem Eintrag tmp steht?
-    Eigen::VectorXd tmps;
-    tmps.resize(lse.size());
-    for (int i = 0; i <lse.size(); i++) {
-      tmps[i] <- tmp;
-    }
-    
-    lse = lse+tmps;
-    lse = lse.log();
+  Eigen::VectorXd backgroundProbs = ds.col(0);
+  lse = lse-backgroundProbs;
+  // hier tats??chliche xMax,xMin,yMax und yMin einfuegen
+  double konst = (65535-115)*(65535-143);
+  double tmp = backgroundProportion/konst;
+  // wie erstelle ich einen vektor, bei dem in jedem Eintrag tmp steht?
+  Eigen::VectorXd tmps(lse.size());
+  for (int i = 0; i <lse.size(); i++) {
+    tmps[i] <- tmp;
+  }
+  
+  lse = lse+tmps;
+  lse = lse.array().log();
     
   
   // now, we have for each data-point the log(sum(weightedGaussian)), these

@@ -102,9 +102,9 @@ emStep <- function (em,flowData, iteration)
   mu<-eigenMu(em@weight,flowData@sampled)
   # CHZS fixing cluster 1
   # hier aendern
-    #xmean <- mean(flowData@sampled[,1])
-    #ymean <- mean(flowData@sampled[,2])
-    #mu[,1] <- c(xmean,ymean)
+    xmean <- mean(flowData@sampled[,1])
+    ymean <- mean(flowData@sampled[,2])
+    mu[,1] <- c(xmean,ymean)
   # CHZS
   return (emCommon(em, flowData, em@weight, mu, iteration))
 }
@@ -142,7 +142,7 @@ emCommon <- function(em, flowData, weight, mu, iteration=100)
                          return (t)
     })
   # hier aendern (entfernen)
-  # sigmaclamped[[1]] <- 25000^2 * matrix(c(1,0,0,1), nrow=2, ncol=2)
+  sigmaclamped[[1]] <- 25000^2 * matrix(c(1,0,0,1), nrow=2, ncol=2)
   # CHZS
   emNew <- emDensitiesLogL (em, flowData, mu, sigmaclamped, clusterProbs)
   return (emNew)

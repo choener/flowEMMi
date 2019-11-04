@@ -41,7 +41,7 @@ parser <- add_option (parser, c ("--log"), action = "store_true", default=FALSE,
 parser <- add_option (parser, c ("--alpha"), type="double", default = 0.5, help="")
 parser <- add_option (parser, c ("--imgformat"), type="character", default = "png", help="")
 parser <- add_option (parser, c ("--mincluster"), type="integer", default = 2, help="")
-parser <- add_option (parser, c ("--maxcluster"), type="integer", default = 20, help="")
+parser <- add_option (parser, c ("--maxcluster"), type="integer", default = 5, help="")
 parser <- add_option (parser, c ("--clusterbracket"), type="integer", default = 3, help="")
 parser <- add_option (parser, c ("--disableparallelism"), action="store_true", default = FALSE, help="")
 

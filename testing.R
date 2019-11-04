@@ -1,6 +1,7 @@
+source ("em.R")
 fcsData <- read.FCS("InTH_160712_025.fcs",alter.names = TRUE,transformation = FALSE)
 summary(fcsData)
-plot(fcsData@exprs[,"PMT.1"], fcsData@exprs[,"PMT.9"])
+#plot(fcsData@exprs[,"PMT.1"], fcsData@exprs[,"PMT.9"])
 set.seed(1)
 results <- flowEMMi( frame = fcsData
                      , ch1="PMT.1", ch2="PMT.9"
@@ -79,7 +80,7 @@ myMatrix
 
 fcsData <- read.FCS("BCK_30_Sep_11_100.fcs",alter.names = TRUE,transformation = FALSE)
 summary(fcsData)
-plot(fcsData@exprs[,"FS.Log"], fcsData@exprs[,"SS.Log"])
+#plot(fcsData@exprs[,"FS.Log"], fcsData@exprs[,"SS.Log"])
 set.seed(1)
 results <- flowEMMi( frame = fcsData
                      , ch1="FS.Log", ch2="SS.Log"
