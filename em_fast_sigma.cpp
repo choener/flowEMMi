@@ -139,14 +139,32 @@ NumericMatrix eigenDensitiesAtSamples(NumericVector clusterProbs, NumericMatrix 
  */
 
 // [[Rcpp::export]]
-double eigenLogLikelihood(NumericMatrix densities) {
+double eigenLogLikelihood(NumericMatrix densities, double backgroundProportion) {
   // incoming weighted cluster probabilities for each data point: samples >< clusters
   Eigen::Map<Eigen::MatrixXd> ds = as<Eigen::Map<Eigen::MatrixXd> >(densities); 
   // row-wise (i.e. for each data point), sum over the weighted normal
   // distribution probabilities
   //
   // then take the log of this sum
-  Eigen::VectorXd lse = ds.array().rowwise().sum().array().log();
+  // hier: delete .log, add background, then log
+  // Eigen::VectorXd lse = ds.array().rowwise().sum().array().log();
+  Eigen::VectorXd lse = ds.array().rowwise().sum().array();
+  // cb: die erste Spalte von ds (fuer background) muss wieder abgezogen werden:
+    Eigen::VectorXd backgroundProbs = ds.col(0);
+    lse = lse-backgroundProbs;
+    // hier tats??chliche xMax,xMin,yMax und yMin einfuegen
+    double tmp = backgroundProportion/((65535-115)*(65535-143));
+    // wie erstelle ich einen vektor, bei dem in jedem Eintrag tmp steht?
+    Eigen::VectorXd tmps;
+    tmps.resize(lse.size());
+    for (int i = 0; i <lse.size(); i++) {
+      tmps[i] <- tmp;
+    }
+    
+    lse = lse+tmps;
+    lse = lse.log();
+    
+  
   // now, we have for each data-point the log(sum(weightedGaussian)), these
   // need to be summed up.
   // It is possible that some values, due to numerical inaccuracies, produce NaNs. We replace those

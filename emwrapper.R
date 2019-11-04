@@ -32,7 +32,7 @@ iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData,verbose=FA
   tic(msg="timing iterateEM")
   if (verbose) {
     cat (sprintf("Starting EM with threshold %.4f threshold, %d clusters\n", deltaThreshold, numClusters))
-    cat (sprintf("Iteration       Δ LL\n"))
+    cat (sprintf("Iteration       ?? LL\n"))
   }
   stepDelta <- Inf
   iteration <- 0
@@ -101,9 +101,10 @@ emStep <- function (em,flowData, iteration)
   # points
   mu<-eigenMu(em@weight,flowData@sampled)
   # CHZS fixing cluster 1
-  xmean <- mean(flowData@sampled[,1])
-  ymean <- mean(flowData@sampled[,2])
-  mu[,1] <- c(xmean,ymean)
+  # hier aendern
+    #xmean <- mean(flowData@sampled[,1])
+    #ymean <- mean(flowData@sampled[,2])
+    #mu[,1] <- c(xmean,ymean)
   # CHZS
   return (emCommon(em, flowData, em@weight, mu, iteration))
 }
@@ -124,6 +125,7 @@ emCommon <- function(em, flowData, weight, mu, iteration=100)
   # sigma[1]...sigma[n]
   sigma           <- eigenSigma(weight,mu,flowData@sampled)
   # CHZS
+  # hier aendern
   clusterProbs[[1]] <- max (0.01, clusterProbs[[1]]) # at least 1% background
   # apply the inline function on each covariance matrix in the list sigma
   sigmaclamped <- lapply(sigma, function(s) {
@@ -139,7 +141,8 @@ emCommon <- function(em, flowData, weight, mu, iteration=100)
                          #})
                          return (t)
     })
-  sigmaclamped[[1]] <- 25000^2 * matrix(c(1,0,0,1), nrow=2, ncol=2)
+  # hier aendern (entfernen)
+  # sigmaclamped[[1]] <- 25000^2 * matrix(c(1,0,0,1), nrow=2, ncol=2)
   # CHZS
   emNew <- emDensitiesLogL (em, flowData, mu, sigmaclamped, clusterProbs)
   return (emNew)
@@ -148,7 +151,9 @@ emCommon <- function(em, flowData, weight, mu, iteration=100)
 emDensitiesLogL <- function (em, flowData, mu, sigma, clusterProbs)
 {
   densities       <- eigenDensitiesAtSamples(clusterProbs ,mu,sigma,flowData@sampled)
-  logL            <- eigenLogLikelihood(densities) #compute log likelihood
+  background <- clusterProbs[1]
+  logL            <- eigenLogLikelihood(densities, backgroundProportion = background) #compute log likelihood
+  # + background hier
   normedDensities <- eigenRowNormalize(densities)
   if (is.nan(logL)) {
     cat(sprintf("NaN in loglikelihood calculation, which should not happen anymore!"))
