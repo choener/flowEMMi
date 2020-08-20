@@ -122,6 +122,7 @@ flowEMMi<-function( frame, ch1="FS.Log", ch2="FL.4.Log"
   stopifnot (initFraction >  0.0)
 
   # assert that we have data in the channels
+  print (colnames(frame))
   stopifnot ( ch1 %in% colnames(frame) )
   stopifnot ( ch2 %in% colnames(frame) )
 
