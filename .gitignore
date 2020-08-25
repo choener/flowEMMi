@@ -1,2 +1,4 @@
 *.txt
 *.svg
+.Rproj.user
+.cacheDir

@@ -4,10 +4,11 @@
 # significantly anymore.
 
 library("tictoc")
+library (Rcpp)
 
-source("classes.R")
+source("./R/classes.R")
 
-sourceCpp(file = "./em_fast_sigma.cpp", cacheDir = "./.cacheDir")
+sourceCpp(file = "./src/em.cpp", cacheDir = "./.cacheDir")
 
 
 

@@ -48,6 +48,8 @@ let
       flowCore
       flowViz
       colortools
+      devtools
+      roxygen2
       #Rcpp
       RcppEigen
       optparse

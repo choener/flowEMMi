@@ -1,7 +1,7 @@
 
-library(tictoc)
-library(flowCore)
-library(mvtnorm)
+requireNamespace("tictoc")
+requireNamespace("flowCore")
+requireNamespace("mvtnorm")
 
 # limits
 setClass (Class="Limits", slots=c(channel="character", min="numeric", max="numeric"))
@@ -23,6 +23,13 @@ limitsC <- function(l)
 
 # a data object, including its limits
 setClass (Class="FlowDataObject", slots=c(flowFrame="flowFrame", data="matrix", xChannel="character", yChannel="character", x="Limits", y="Limits"))
+#' Creates a flow data object.
+#'
+#' Fill me!
+#' @param frame Fill me
+#' @param xChannel ...
+#' @param yChannel ...
+#' @export
 mkFlowDataObject <- function(frame, xChannel, yChannel)
 {
   data <- exprs(frame)
