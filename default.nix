@@ -115,6 +115,7 @@ in
     flowEmmiStudio = stdenv.mkDerivation {
       name = "studio";
       buildInputs = [ flowEmmiStudio qt5.qtbase ];
+      QT_XCB_GL_INTEGRATION="none";
     };
   }
 
