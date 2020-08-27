@@ -1,11 +1,14 @@
 Package: flowEMMi
 Type: Package
-Title: What the Package Does (Title Case)
+Title: automated model-based clustering for microbial cytometric data
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Author: Joachim Ludwig, Christian Hoener zu Siederdissen
+Maintainer: Christian Hoener zu Siederdissen <choener@bioinf.uni-leipzig.de>
+Description: flowEMMi clusters microbial cytometric data. It is designed to be time-efficient with low wall-clock times.
+    In flowEMMi, we use a multivariate Gaussian mixture model, subsampling to speed up initial
+    cluster determination, and perform a foreground/background separation step.
+    The underlying model has been implemented in C++ and achieves running times that allow for near-online results.
+    https://link.springer.com/article/10.1186/s12859-019-3152-3
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
@@ -14,5 +17,8 @@ Imports:
   RcppEigen (>= 0.3),
   tictoc (>= 1.0),
   flowCore (>= 1.5),
-  mvtnorm (>= 1.0)
+  mvtnorm (>= 1.0),
+LinkingTo:
+  Rcpp,
+  RcppEigen,
 RoxygenNote: 7.0.2

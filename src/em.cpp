@@ -1,5 +1,5 @@
 // -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
-#include "Rcpp.h"
+#include <Rcpp.h>
 #include <RcppEigen.h>
 #include <list>
 #include <iostream>

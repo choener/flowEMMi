@@ -50,7 +50,7 @@ let
       colortools
       devtools
       roxygen2
-      #Rcpp
+      Rcpp
       RcppEigen
       optparse
       ggplot2
