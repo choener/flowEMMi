@@ -92,6 +92,10 @@ mkFractionedFlowData <- function(fdo, fraction=1.0, xMin, xMax, yMin, yMax)
 # a single run of the EM algorithm with a given number of clusters
 EMRun <- setClass (Class="EMRun", slots=c(mu="matrix", sigma="list", weight="matrix", clusterProbs="numeric", logL="numeric", data="list"
                                  ))
+#' Creates an object of type EMRun
+#'
+#' @return A new object of type EMRun, with a matrix mu, covariance matrix sigma, a matrix with weights for each sample point (weights), a probability for each cluster (clusterProbs), a log-likelihhod (logL) and a list of data
+#' @export
 mkEMRun <- function ()
 {
   return (new("EMRun"
