@@ -77,6 +77,7 @@ let
       #CytoML
       flowCyBar
       flowCHIC
+      viridis
       rgl
     ];
 
