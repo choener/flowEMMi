@@ -41,7 +41,18 @@ let
       #  nativeBuildInputs = old.nativeBuildInputs ++ [ libxml2 ];
       #});
     }); # overrides
-  });
+  }); # override r packages
+
+  # nixGL system to run opengl anywhere (testing)
+  nixGL =
+    let src = fetchFromGitHub {
+          owner  = "guibou";
+          repo   = "nixGL";
+          rev    = "fad15ba09de65fc58052df84b9f68fbc088e5e7c";
+          sha256 = "1wc5gfj5ymgm4gxx5pz4lkqp5vxqdk2njlbnrc1kmailgzj6f75h";
+        };
+    in ((import "${src}/default.nix") {
+    });
 
   # what we need for our system
   rPemmi = with rP; [
@@ -66,6 +77,7 @@ let
       #CytoML
       flowCyBar
       flowCHIC
+      rgl
     ];
 
   # required overrides due to failuers
@@ -115,10 +127,13 @@ let
   flowEmmiR = rWrapper.override { packages = rPemmi ++ rPcompare; };
   flowEmmiStudio = rstudioWrapper.override { packages = rPemmi ++ rPcompare; };
 in
-  { flowEmmiR = flowEmmiR;
+  { flowEmmiR = stdenv.mkDerivation {
+      name = "cli";
+      buildInputs = with nixGL; [ flowEmmiR nixGLIntel nixGLNvidia ];
+    };
     flowEmmiStudio = stdenv.mkDerivation {
       name = "studio";
-      buildInputs = [ R rPemmi rPcompare flowEmmiStudio qt5.qtbase ];
+      buildInputs = with nixGL; [ R rPemmi rPcompare flowEmmiStudio qt5.qtbase nixGLIntel nixGLNvidia ];
       QT_XCB_GL_INTEGRATION="none";
     };
   }
