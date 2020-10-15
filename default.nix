@@ -3,7 +3,7 @@
 
  # with import <nixpkgs> {};
 
-{ rWrapper, rstudioWrapper, rPackages, zlib, parallel, libxml2, fetchurl, fetchFromGitHub, recurseIntoAttrs, qt5, stdenv, lib, R }:
+{ rWrapper, rstudioWrapper, rPackages, zlib, parallel, libxml2, fetchurl, fetchFromGitHub, recurseIntoAttrs, qt5, stdenv, lib, R, pkgs }:
 
 let
 
@@ -51,8 +51,7 @@ let
           rev    = "fad15ba09de65fc58052df84b9f68fbc088e5e7c";
           sha256 = "1wc5gfj5ymgm4gxx5pz4lkqp5vxqdk2njlbnrc1kmailgzj6f75h";
         };
-    in ((import "${src}/default.nix") {
-    });
+    in ((import "${src}/default.nix") { inherit pkgs; });
 
   # what we need for our system
   rPemmi = with rP; [
@@ -130,11 +129,11 @@ let
 in
   { flowEmmiR = stdenv.mkDerivation {
       name = "cli";
-      buildInputs = with nixGL; [ flowEmmiR nixGLIntel nixGLNvidia ];
+      buildInputs = with nixGL; [ flowEmmiR nixGLIntel ];
     };
     flowEmmiStudio = stdenv.mkDerivation {
       name = "studio";
-      buildInputs = with nixGL; [ R rPemmi rPcompare flowEmmiStudio qt5.qtbase nixGLIntel nixGLNvidia ];
+      buildInputs = with nixGL; [ R rPemmi rPcompare flowEmmiStudio qt5.qtbase nixGLIntel ];
       QT_XCB_GL_INTEGRATION="none";
     };
   }
