@@ -66,6 +66,8 @@ let
       #CytoML
       flowCyBar
       flowCHIC
+      viridis
+      rgl
     ];
 
   # required overrides due to failuers
