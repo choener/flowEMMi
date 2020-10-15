@@ -64,6 +64,8 @@ let
       #Rmpi
       #RflowWorkspace
       #CytoML
+      flowCyBar
+      flowCHIC
     ];
 
   # required overrides due to failuers
