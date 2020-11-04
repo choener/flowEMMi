@@ -78,6 +78,7 @@ let
       flowCHIC
       viridis
       rgl
+      here
     ];
 
   # required overrides due to failuers
