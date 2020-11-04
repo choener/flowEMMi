@@ -137,6 +137,7 @@ in
       buildInputs = with nixGL; [ R rPemmi rPcompare flowEmmiStudio qt5.qtbase nixGLIntel ];
       QT_XCB_GL_INTEGRATION="none";
       FONTCONFIG_FILE = "${pkgs.fontconfig.out}/etc/fonts/fonts.conf";
+      LOCALE_ARCHIVE = "${pkgs.glibcLocales}/lib/locale/locale-archive";
     };
   }
 
