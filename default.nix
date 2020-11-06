@@ -1,9 +1,12 @@
 # just calling "nix-shell" yields a shell where everything is available, but we
 # need to call ./R explicitly
 
- # with import <nixpkgs> {};
-
-{ rWrapper, rstudioWrapper, rPackages, zlib, parallel, libxml2, fetchurl, fetchFromGitHub, recurseIntoAttrs, qt5, stdenv, lib, R, pkgs }:
+{ R, rWrapper, rstudioWrapper, rPackages
+, qt5, zlib, libxml2
+, parallel
+, fetchurl, fetchFromGitHub, recurseIntoAttrs
+, pkgs, lib, stdenv, fontconfig
+}:
 
 let
 
@@ -126,17 +129,26 @@ let
   # final environment
   flowEmmiR = rWrapper.override { packages = rPemmi ++ rPcompare; };
   flowEmmiStudio = rstudioWrapper.override { packages = rPemmi ++ rPcompare; };
+  fontconfig-file = pkgs.writeText "fonts.cfg" ''
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+    <fontconfig>
+    <cachedir prefix="xdg">fontconfig</cachedir>
+    <dir>${pkgs.ankacoder}/share/fonts/</dir>
+    </fontconfig>
+  '';
 in
   { flowEmmiR = stdenv.mkDerivation {
       name = "cli";
       buildInputs = with nixGL; [ flowEmmiR nixGLIntel ];
     };
-    flowEmmiStudio = stdenv.mkDerivation {
-      name = "studio";
+    flowEmmiStudio = pkgs.mkShell {
       buildInputs = with nixGL; [ R rPemmi rPcompare flowEmmiStudio qt5.qtbase nixGLIntel ];
-      QT_XCB_GL_INTEGRATION="none";
-      FONTCONFIG_FILE = "${pkgs.fontconfig.out}/etc/fonts/fonts.conf";
-      LOCALE_ARCHIVE = "${pkgs.glibcLocales}/lib/locale/locale-archive";
+        QT_XCB_GL_INTEGRATION="none";
+        FONTCONFIG_FILE = fontconfig-file; # "${fontconfig.out}/etc/fonts/fonts.conf";
+        LOCALE_ARCHIVE = "${pkgs.glibcLocales}/lib/locale/locale-archive";
+      shellHook = ''
+      '';
     };
   }
 
