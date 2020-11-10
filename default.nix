@@ -128,13 +128,17 @@ let
 
   # final environment
   flowEmmiR = rWrapper.override { packages = rPemmi ++ rPcompare; };
-  flowEmmiStudio = rstudioWrapper.override { packages = rPemmi ++ rPcompare; };
+  flowEmmiStudio = rstudioWrapper.override { packages = rPemmi ++ rPcompare ++ [ rPackages.extrafont ] ; };
   fontconfig-file = pkgs.writeText "fonts.cfg" ''
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
     <fontconfig>
     <cachedir prefix="xdg">fontconfig</cachedir>
     <dir>${pkgs.ankacoder}/share/fonts/</dir>
+    <dir>${pkgs.bakoma_ttf}/share/fonts/</dir>
+    <dir>${pkgs.cm_unicode}/share/fonts/</dir>
+    <dir>${pkgs.liberation_ttf}/share/fonts/</dir>
+    <dir>${pkgs.aileron}/share/fonts/</dir>
     </fontconfig>
   '';
 in
