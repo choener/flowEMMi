@@ -18,7 +18,9 @@ sourceCpp(file = "./src/em.cpp", cacheDir = "./.cacheDir")
 #
 # TODO have tictoc write to a file with additional information. Develop perf.R
 # module for this.
+#
 
+#' @export
 iterateEM <- function (deltaThreshold, numClusters, flowData, verbose=FALSE)
 {
   em <- emInit (numClusters = numClusters, flowData = flowData)
@@ -28,6 +30,7 @@ iterateEM <- function (deltaThreshold, numClusters, flowData, verbose=FALSE)
 
 
 
+#' @export
 iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData,verbose=FALSE)
 {
   tic(msg="timing iterateEM")
@@ -66,6 +69,7 @@ iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData,verbose=FA
 
 # the first EM step to set everything up
 
+#' @export
 emInit <- function (numClusters, flowData)
 {
   em <- mkEMRun()
@@ -86,6 +90,7 @@ emInit <- function (numClusters, flowData)
 
 # initialize from prior em
 
+#' @export
 emInitWithPrior <- function (emOld, flowData)
 {
   em <- mkEMRun()
@@ -96,6 +101,7 @@ emInitWithPrior <- function (emOld, flowData)
 
 # a single EM step
 
+#' @export
 emStep <- function (em,flowData, iteration)
 {
   # calculate mu based on cluster-weight for each data point, and actual data
@@ -113,6 +119,7 @@ emStep <- function (em,flowData, iteration)
 
 # shared between init/step
 
+#' @export
 emCommon <- function(em, flowData, weight, mu, iteration=100)
 {
   itr <- 0.1 * min(1000, max (10,iteration))
@@ -124,18 +131,48 @@ emCommon <- function(em, flowData, weight, mu, iteration=100)
   # calculate the sample covariance matrices, one for each cluster, as
   # sigma[1]...sigma[n]
   sigma           <- eigenSigma(weight,mu,flowData@sampled)
-  # CHZS
+
+  # CHZS and CB
   clusterProbs[[1]] <- max (0.01, clusterProbs[[1]]) # at least 1% background
   sigmaclamped <- lapply(sigma, function(s) {
-                         t <- apply(s, c(1,2), function(v) { sign(v) * min(abs(v),(2500*clamp)^2) })
-                         return (t)
-    })
+    variance1 <- s[1,1] # sigma_1 ^2
+    sigma1 <- sqrt(variance1)
+    c <- s[1,2] # = s[2,1] = rho*sigma_1 * sigma_2 with rho in [-1,1]
+    variance2 <- s[2,2] # sigma_2 ^2
+    sigma2 <- sqrt(variance2)
+    if(variance1 >= 100 && variance2 >= 100)
+    {
+      rho <- c/(sigma1*sigma2) # only in this case all the values are fine
+      if(rho < -0.95){rho <- -0.95}
+      if(rho > 0.95){rho <- 0.95}
+    }
+    if(variance1 < 100) # then we have no clue about rho
+    {
+      sigma1 <- 10
+      rho <- 0 # assume no correlation
+    }
+    if(variance2 < 100) # then we have no clue about rho
+    {
+      sigma2 <- 10
+      rho <- 0 # assume no correlation
+    }
+    if(sigma1 > 25000){sigma1 <- 25000} # limit sigma1
+    if(sigma2 > 25000){sigma2 <- 25000} # limit sigma2
+    variance1 <- sigma1^2
+    variance2 <- sigma2^2
+    c <- rho*sigma1*sigma2
+    t <- matrix(c(variance1,c,c,variance2),nrow=2,ncol=2)
+    return (t)
+  }) # for each sigma
+  #  the background cluster stays the same in each iteration
   sigmaclamped[[1]] <- 25000^2 * matrix(c(1,0,0,1), nrow=2, ncol=2)
-  # CHZS
+  # # CHZS and CB
+
   emNew <- emDensitiesLogL (em, flowData, mu, sigmaclamped, clusterProbs)
   return (emNew)
 }
 
+#' @export
 emDensitiesLogL <- function (em, flowData, mu, sigma, clusterProbs)
 {
   densities       <- eigenDensitiesAtSamples(clusterProbs ,mu,sigma,flowData@sampled)

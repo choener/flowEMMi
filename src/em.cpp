@@ -149,7 +149,9 @@ double eigenLogLikelihood(NumericMatrix densities) {
   Eigen::VectorXd lse = ds.array().rowwise().sum().array().log();
   // now, we have for each data-point the log(sum(weightedGaussian)), these
   // need to be summed up.
-  return lse.sum();
+  double r = lse.sum();
+  if (!isfinite (r)) cout << "eigenLokLikelihood: isFinite violated" << endl;
+  return r;
 }
 
 
