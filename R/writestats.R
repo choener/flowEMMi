@@ -3,12 +3,13 @@
 
 # TODO should later work on the class, with run information
 
-source("classes.R")
+source("./R/classes.R")
 
 
 
 # textual output of the BIC information
 
+#' @export
 statBIC <- function (bic)
 {
   sink("bic.txt")
@@ -19,6 +20,8 @@ statBIC <- function (bic)
 
 
 # textual output of each cluster position
+
+#' @export
 statCluster <- function (mu, sigma)
 {
   sink(sprintf("cluster-positions-%03d.txt",c))

@@ -123,9 +123,10 @@ updateEMRun <- function (em, mu, sigma, weight, clusterProbs, logL)
 
 
 
-# provide a label vector for each data element in an @em@ structure. If below
-# the cutoff, the label is set "0" to indicate background.
-
+#' Provide a label vector for each data element in an @em@ structure
+#'
+#' If below the cutoff, the label is set "0" to indicate background.
+#' @export
 getLabels <- function (em, cutoff=0.05, ksigma=2.0) {
   data <- em@data[[1]]
   # for each cluster, have mean and standard deviation
