@@ -1,5 +1,4 @@
 
-requireNamespace("tictoc")
 requireNamespace("flowCore")
 requireNamespace("mvtnorm")
 
@@ -57,7 +56,6 @@ FlowData <- setClass (Class="FlowData", slots=c(data="FlowDataObject", sampled="
 
 mkFractionedFlowData <- function(fdo, fraction=1.0, xMin, xMax, yMin, yMax)
 {
-  tic(msg="mkFractionedFlowData")
   # prepare subset extraction without border machine noise
   border <- list(c(xMin,xMax), c(yMin,yMax)) # define subset area
   names(border) <- c(fdo@xChannel, fdo@yChannel)
@@ -78,7 +76,6 @@ mkFractionedFlowData <- function(fdo, fraction=1.0, xMin, xMax, yMin, yMax)
     subsampled<-vs[sample(nrow(vs),size=nrow(vs) * fraction,replace=FALSE),]
   }
   colnames(subsampled) <- list(fdo@xChannel, fdo@yChannel)
-  toc()
 
   return (new("FlowData"
               , data=denoisedData

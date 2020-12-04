@@ -58,8 +58,10 @@ iterateInitedEM <- function (em,deltaThreshold, numClusters, flowData,verbose=FA
     }
     iteration <- iteration +1
   }
-  cat (sprintf("%5d %14.4f\n", iteration, stepDelta))
-  toc()
+  if (verbose) {
+    cat (sprintf("%5d %14.4f\n", iteration, stepDelta))
+  }
+  toc(quiet = !verbose)
   return (em)
 }
 

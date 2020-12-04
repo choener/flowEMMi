@@ -39,7 +39,7 @@ flowEMMi <- function ( fdo
                          , numClusters=c, useLogScale=useLogScale, imageFormat=imageFormat
                          , xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax
                          , epsilon=convergenceEpsilon / (max (sqrt(initFraction), 1.0))
-                         , verbose=T)
+                         , verbose=verbose)
     return (em)
   }
   ems<-mclapply (minClusters:maxClusters, parSampled, mc.cores=numCores)
@@ -63,7 +63,9 @@ flowEMMi <- function ( fdo
   parFull <- function (idx)
   {
     c <- minClusters + idx - 1
-    cat(sprintf("full calculation with %d clusters, idx %d\n",c,idx))
+    if (verbose) {
+      cat(sprintf("full calculation with %d clusters, idx %d\n",c,idx))
+    }
     em_<-ems[[idx]]
     pd <- mkFractionedFlowData (fdo=fdo
                                ,fraction = finalFraction
@@ -85,10 +87,10 @@ flowEMMi <- function ( fdo
   toc(quiet= ! verbose)
 
   # kill "data" within emsFull
-  lapply(emsFull, function(e){ x <- e; x$data<-list(); return (x)})
+  #lapply(emsFull, function(e){ x <- e; x$data<-list(); return (x)})
   # kill weight matrix
   # TODO allow keeping with flag
-  lapply(emsFull, function(e){ x <- e; x$weight=matrix(); return (x)})
+  #lapply(emsFull, function(e){ x <- e; x$weight=matrix(); return (x)})
 
   # TODO hand bestem back to the user
   lls <- lapply(emsFull, bic)
@@ -123,7 +125,7 @@ flowEMMiFull<-function ( em, flowDataObject
                         , numClusters
                         , xMin, xMax, yMin, yMax
                         , epsilon
-                        , verbose=TRUE
+                        , verbose=F
                         ,...
 ) {
   pd <- mkFractionedFlowData (fdo=flowDataObject
@@ -144,7 +146,7 @@ flowEMMiFull<-function ( em, flowDataObject
 #' log-likelihood.
 #'
 #' @export
-flowEMMiSampled<-function ( flowDataObject, initFraction, inits, numClusters, useLogScale, imageFormat, xMin, xMax, yMin, yMax, epsilon, verbose=FALSE)
+flowEMMiSampled<-function ( flowDataObject, initFraction, inits, numClusters, useLogScale, imageFormat, xMin, xMax, yMin, yMax, epsilon, verbose=F)
 {
   em<-NULL
   # run inits with fraction of points

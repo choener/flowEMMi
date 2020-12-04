@@ -17,10 +17,11 @@ library (parallel)
 library (Rcpp)
 library (tictoc)
 
-source("classes.R")
-source("plotting.R")
-source("writestats.R")
-source("emwrapper.R")
+#source("classes.R")
+#source("plotting.R")
+#source("writestats.R")
+#source("emwrapper.R")
+source("./R/flowemmi.R")
 
 parser <- OptionParser ()
 parser <- add_option (parser, c ("-v", "--verbose"), action = "store_true", default=FALSE, help="be very verbose")
@@ -43,7 +44,7 @@ parser <- add_option (parser, c ("--imgformat"), type="character", default = "pn
 parser <- add_option (parser, c ("--mincluster"), type="integer", default = 2, help="")
 parser <- add_option (parser, c ("--maxcluster"), type="integer", default = 20, help="")
 parser <- add_option (parser, c ("--clusterbracket"), type="integer", default = 3, help="")
-parser <- add_option (parser, c ("--disableparallelism"), action="store_true", default = FALSE, help="")
+parser <- add_option (parser, c ("--parallel"), action="store_true", default = FALSE, help="")
 
 opts <- parse_args(parser)
 
@@ -54,19 +55,19 @@ opts <- parse_args(parser)
 # load sample
 if (opts$file != "") {
   fcsData <- read.FCS(opts$file,alter.names = TRUE,transformation = FALSE)
+  print (colnames(fcsData))
+  fdo <- mkFlowDataObject(fcsData, xChannel=opts$channelx, yChannel=opts$channely)
   # run actual flowEMMi algorithm
-  results <- flowEMMi( frame = fcsData
-                     , ch1=opts$channelx, ch2=opts$channely
+  results <- flowEMMi( fdo=fdo
                      , xMin = opts$xstart, xMax = opts$xend, yMin=opts$ystart, yMax=opts$yend
                      , initFraction = opts$initfraction
                      , finalFraction = opts$finalfraction
-                     , prior = opts$prior
-                     , separation = opts$separation
                      , numberOfInits = opts$inits
                      , useLogScale = opts$log
-                     , alpha = opts$alpha, imageFormat = opts$imgformat
+                     , imageFormat = opts$imgformat
                      , minClusters = opts$mincluster, maxClusters = opts$maxcluster, clusterbracket=opts$clusterbracket
-                     , disableParallelism = opts$disableparallelism
+                     , parallel = opts$parallel
                      , convergenceEpsilon = opts$convergence
+                     , verbose = opts$verbose
                      )
 }
