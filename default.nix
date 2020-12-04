@@ -82,6 +82,8 @@ let
       viridis
       rgl
       here
+      magick
+      gplots
     ];
 
   # required overrides due to failuers
