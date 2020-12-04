@@ -18,7 +18,7 @@ library (Rcpp)
 library (tictoc)
 
 #source("classes.R")
-#source("plotting.R")
+source("plotting.R")
 #source("writestats.R")
 #source("emwrapper.R")
 source("./R/flowemmi.R")
@@ -70,4 +70,8 @@ if (opts$file != "") {
                      , convergenceEpsilon = opts$convergence
                      , verbose = opts$verbose
                      )
+  # plot the results
+  png("resultOfFlowEMMi.png")
+  plotDensityAndEllipsesByRelevance(data = fcsData@exprs[,c(opts$channelx,opts$channely)], results = results$best)
+  dev.off()
 }

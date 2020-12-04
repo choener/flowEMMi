@@ -1,6 +1,7 @@
 
 library(colortools)
 library(mixtools)
+library(gplots)
 
 source("./R/classes.R")
 
@@ -121,24 +122,24 @@ plotEllipse <- function(A,B,phi,c, numPoints=200, newplot=TRUE, color="black", p
 # plotte Ellipsen nach ihrer Wichtigkeit gefaerbt
 plotDensityAndEllipsesByRelevance <- function(results, alpha=0.95, data, addLegend=TRUE, plot=TRUE)
 {
-  centers <- split(results$mu, col(results$mu)) # returns a list
-  sigmas <- results$sigma
+  centers <- split(results@mu, col(results@mu)) # returns a list
+  sigmas <- results@sigma
 
 
 
   myEllipses <- function(i)
   {
     parameters <- getExtremes(mu=centers[[i]], sigma = sigmas[[i]], alpha = alpha, plot=FALSE)
-    return(list(major=parameters$major, minor=parameters$minor, angle=parameters$angle, center=centers[[i]], relevance=results$clusterProbs[i]))
+    return(list(major=parameters$major, minor=parameters$minor, angle=parameters$angle, center=centers[[i]], relevance=results@clusterProbs[i]))
   }
 
-  indices <- 1:(length(results$sigma)) # we do not care about the background cluster
+  indices <- 1:(length(results@sigma)) # we do not care about the background cluster
   ellipses <- mapply(myEllipses, indices)
   ellipses <- as.data.frame(t(ellipses))
   ellipses$index <- indices
   relevance <- data.frame(index=indices, rel=unlist(ellipses$relevance))
   relevance <- relevance[order(relevance$rel),]
-  relevance$color <- bluered(length(results$sigma))
+  relevance$color <- bluered(length(results@sigma))
   relevance <- relevance[order(relevance$index),]
 
   ellipsePoints <- function(i)
@@ -156,9 +157,9 @@ plotDensityAndEllipsesByRelevance <- function(results, alpha=0.95, data, addLege
   # skip the background cluster
   colors <- rep(relevance$color[2], length(list[,2]$x))
 
-  if(length(results$sigma) >=3)
+  if(length(results@sigma) >=3)
   {
-    for (i in 3:length(results$sigma)){
+    for (i in 3:length(results@sigma)){
       xs <- append(xs, list[,i]$x)
       ys <- append(ys, list[,i]$y)
 
@@ -186,7 +187,7 @@ plotDensityAndEllipsesByRelevance <- function(results, alpha=0.95, data, addLege
     #                     alpha = 0.5, color="black")
     # }
 
-    for (i in 2:length(results$sigma))
+    for (i in 2:length(results@sigma))
     {
       currColor <- which(relevance$index==i)
 
@@ -195,7 +196,7 @@ plotDensityAndEllipsesByRelevance <- function(results, alpha=0.95, data, addLege
         # p <- p+ annotate(geom = "text", label=paste("E", i, sep=""), x=55000, y=40000- i*2000, color=relevance$color[i])
         # add a legend for the relevance of the ellipses
         p <- p + annotate("rect", xmin = 64000, xmax = 67000, ymin = 29000-i*1000, ymax = 30000-i*1000,
-                          alpha = 1, color=redblue(length(results$sigma))[i], fill=redblue(length(results$sigma))[i] )
+                          alpha = 1, color=redblue(length(results@sigma))[i], fill=redblue(length(results@sigma))[i] )
       }
 
     }
@@ -203,7 +204,7 @@ plotDensityAndEllipsesByRelevance <- function(results, alpha=0.95, data, addLege
     {
       p <- p+ annotate(geom = "text", label="ellipse-weight", x=67000, y=30000, color="black", fontface="italic")
       p <- p+ annotate(geom = "text", label="high", x=70000, y=27000, color="black")
-      p <- p+ annotate(geom = "text", label="low", x=70000, y=29000- (length(results$sigma)-1)*1000, color="black")
+      p <- p+ annotate(geom = "text", label="low", x=70000, y=29000- (length(results@sigma)-1)*1000, color="black")
     }
     if(plot)
     {
@@ -224,15 +225,15 @@ plotDensityAndEllipsesByRelevance <- function(results, alpha=0.95, data, addLege
 
 plotDensityAndEllipses <- function(data, results, alpha=0.95)
 {
-  centers <- split(results$mu, col(results$mu)) # returns a list
-  sigmas <- results$sigma
+  centers <- split(results@mu, col(results@mu)) # returns a list
+  sigmas <- results@sigma
 
   myEllipses <- function(i)
   {
     parameters <- getExtremes(mu=centers[[i]], sigma = sigmas[[i]], alpha = alpha, plot=FALSE)
     return(list(major=parameters$major, minor=parameters$minor, angle=parameters$angle, center=centers[[i]]))
   }
-  indices <- 1:(length(results$sigma))
+  indices <- 1:(length(results@sigma))
   ellipses <- mapply(myEllipses, indices)
   ellipses <- as.data.frame(t(ellipses))
 
@@ -251,7 +252,7 @@ plotDensityAndEllipses <- function(data, results, alpha=0.95)
   xs <- list[,2]$x
   ys <- list[,2]$y
 
-  for (i in 3:length(results$sigma)){
+  for (i in 3:length(results@sigma)){
     xs <- append(xs, list[,i]$x)
     ys <- append(ys, list[,i]$y)
   }
