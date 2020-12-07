@@ -120,7 +120,12 @@ plotEllipse <- function(A,B,phi,c, numPoints=200, newplot=TRUE, color="black", p
 }
 
 # plotte Ellipsen nach ihrer Wichtigkeit gefaerbt
-plotDensityAndEllipsesByRelevance <- function(results, alpha=0.95, data, addLegend=TRUE, plot=TRUE)
+plotDensityAndEllipsesByRelevance <- function(results, alpha=0.95, data, addLegend=TRUE, plot=TRUE,
+                                              title="", xlab="Forward Scatter", ylab="DAPI Fluorescence",
+                                              title_color="black", axis_color="black", font="cmsltt10",
+                                              title_size=16, axis_size=14, axisLabeling_size=14,
+                                              face_title="bold.italic", face_axis="plain",
+                                              face_axisLabels="plain", dot_size=0.1)
 {
   centers <- split(results@mu, col(results@mu)) # returns a list
   sigmas <- results@sigma
@@ -177,15 +182,17 @@ plotDensityAndEllipsesByRelevance <- function(results, alpha=0.95, data, addLege
   if(length(x) > 0 && length(y) > 0)
   {
     df2 <- data.frame(x = x, y = y,
-                      d = densCols(x, y, colramp = colorRampPalette(rev(rainbow(10, end = 4/6)))))
-    p <- ggplot(df2) + geom_point(aes(x, y, col = d), size = 0.1) + coord_fixed(ratio = 1) +
-      scale_color_identity() + annotate("point", x = xs, y = ys, colour = colors, size=0.1) + theme_bw() +
-      xlab("PMT1 bzw. Forward Scatter") + ylab("PMT9 bzw. Fluoreszenz")
-    # if(addLegend)
-    # {
-    #   p <- p + annotate("rect", xmin = 50000, xmax = 60000, ymin = -5000, ymax = 40000,
-    #                     alpha = 0.5, color="black")
-    # }
+                      d = densCols(x, y, colramp = colorRampPalette(rev(rainbow(20, end = 4/6)))))
+    p <- ggplot(df2) + geom_point(aes(x, y, col = d), size = dot_size) + coord_fixed(ratio = 1) +
+      scale_color_identity() + annotate("point", x = xs, y = ys, colour = colors, size=0.1)+
+      theme_bw() + theme(text=element_text(family=font),
+                         axis.title.x = element_text(color=axis_color, size=axis_size, face=face_axis),
+                         axis.title.y = element_text(color=axis_color, size=axis_size, face=face_axis),
+                         axis.text.x = element_text(size=axisLabeling_size, face = face_axisLabels),
+                         axis.text.y = element_text(size=axisLabeling_size, face = face_axisLabels)) +
+     xlab(xlab) + ylab(ylab) + ggtitle(title) +
+      theme(plot.title = element_text(hjust = 0.5, color=title_color, size=title_size, face=face_title))
+    # the 0.5 makes the title be centered
 
     for (i in 2:length(results@sigma))
     {
@@ -193,16 +200,14 @@ plotDensityAndEllipsesByRelevance <- function(results, alpha=0.95, data, addLege
 
       if(addLegend)
       {
-        # p <- p+ annotate(geom = "text", label=paste("E", i, sep=""), x=55000, y=40000- i*2000, color=relevance$color[i])
-        # add a legend for the relevance of the ellipses
-        p <- p + annotate("rect", xmin = 64000, xmax = 67000, ymin = 29000-i*1000, ymax = 30000-i*1000,
+         p <- p + annotate("rect", xmin = 64000, xmax = 67000, ymin = 29000-i*1000, ymax = 30000-i*1000,
                           alpha = 1, color=redblue(length(results@sigma))[i], fill=redblue(length(results@sigma))[i] )
       }
 
     }
     if(addLegend)
     {
-      p <- p+ annotate(geom = "text", label="ellipse-weight", x=67000, y=30000, color="black", fontface="italic")
+      p <- p+ annotate(geom = "text", label="ellipse-weight", x=67000, y=30000, color="black")
       p <- p+ annotate(geom = "text", label="high", x=70000, y=27000, color="black")
       p <- p+ annotate(geom = "text", label="low", x=70000, y=29000- (length(results@sigma)-1)*1000, color="black")
     }
@@ -223,7 +228,12 @@ plotDensityAndEllipsesByRelevance <- function(results, alpha=0.95, data, addLege
 
 } # end plotDensityAndEllipsesByRelevance
 
-plotDensityAndEllipses <- function(data, results, alpha=0.95)
+plotDensityAndEllipses <- function(data, results, alpha=0.95,
+                                   title="", xlab="Forward Scatter", ylab="DAPI Fluorescence",
+                                   title_color="black", axis_color="black", font="cmsltt10",
+                                   title_size=16, axis_size=14, axisLabeling_size=14,
+                                   face_title="bold.italic", face_axis="plain",
+                                   face_axisLabels="plain", dot_size=0.1)
 {
   centers <- split(results@mu, col(results@mu)) # returns a list
   sigmas <- results@sigma
@@ -244,9 +254,6 @@ plotDensityAndEllipses <- function(data, results, alpha=0.95)
   }
   # ellipsePoints(3)
   list <- mapply(ellipsePoints,indices)
-  #list <- t(list)
-  # xs <- unlist(list[1,])
-  # ys <- unlist(list[2,])
 
   # start at 2, because we don't want to see the background cluster
   xs <- list[,2]$x
@@ -264,15 +271,19 @@ plotDensityAndEllipses <- function(data, results, alpha=0.95)
   x <- x[good]
   y <- y[good]
 
+
   df2 <- data.frame(x = x, y = y,
-                    d = densCols(x, y, colramp = colorRampPalette(rev(rainbow(10, end = 4/6)))))
-  p <- ggplot(df2) +
-    geom_point(aes(x, y, col = d), size = 0.1) + coord_fixed(ratio = 1) +
-    scale_color_identity() + annotate("point", x = xs, y = ys, colour = "black", size=0.1) + theme_bw() +
-    xlab("PMT1 bzw. Forward Scatter") + ylab("PMT9 bzw. Fluoreszenz")
-  # p <- ggplot(df2) +
-  #   geom_point(aes(x, y, col = d), size = 0.1) +
-  #   scale_color_identity() + theme_bw()
+                    d = densCols(x, y, colramp = colorRampPalette(rev(rainbow(20, end = 4/6)))))
+
+  p <- ggplot(df2) + geom_point(aes(x, y, col = d), size = dot_size) + coord_fixed(ratio = 1) +
+    scale_color_identity() + annotate("point", x = xs, y = ys, colour = "black", size=0.1)+
+    theme_bw() + theme(text=element_text(family=font),
+                       axis.title.x = element_text(color=axis_color, size=axis_size, face=face_axis),
+                       axis.title.y = element_text(color=axis_color, size=axis_size, face=face_axis),
+                       axis.text.x = element_text(size=axisLabeling_size, face = face_axisLabels),
+                       axis.text.y = element_text(size=axisLabeling_size, face = face_axisLabels)) +
+    xlab(xlab) + ylab(ylab) + ggtitle(title) +
+    theme(plot.title = element_text(hjust = 0.5, color=title_color, size=title_size, face=face_title))
   print(p)
 } # end plotDensityAndEllipses
 
@@ -285,10 +296,10 @@ getExtremes <- function(mu, sigma, alpha=0.95, plot=FALSE, newplot=TRUE)
 
   s <- -2*log(1-alpha)
   # derive the length of the half-major axis
-  major <- sqrt(s*eigenvalues[1]) # 12393.97
+  major <- sqrt(s*eigenvalues[1])
   A <- major
   # derive the length of the half-minor axis
-  minor <- sqrt(s*eigenvalues[2]) # 3248.652
+  minor <- sqrt(s*eigenvalues[2])
   B <- minor
 
   # normalize the longest eigenvector
@@ -319,15 +330,6 @@ getExtremes <- function(mu, sigma, alpha=0.95, plot=FALSE, newplot=TRUE)
 
   # angle of the ellipse is the angle of the bigger eigenvector to the x-axis
   angle <- atan(bigEV[2] / bigEV[1])
-
-  # A is the semi-axis length along the x-axis, and B is the semi-axis length along the y-axis
-  # so, does major belong to the x-axis or to the y-axis?
-  # if abs(bigEV[2]) is bigger than abs(bigEV[1]), then major belongs to the y-axis!
-  # if(abs(bigEV[1]) > abs(bigEV[2]))
-  # {
-  #   B <- major
-  #   A <- minor
-  # }
 
 
 
