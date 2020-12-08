@@ -131,9 +131,14 @@ getLabels <- function (em, cutoff=0.05, ksigma=2.0) {
                  {
                    m <- em@mu[,i]
                    s <- em@sigma[[i]]
+                   # generate 1000 data points (two-dimensional) from mu and sigma of cluster i
                    xs <- rmvnorm(1000, mean=m, sigma=s)
+                   # for each of the generated (two-dimensional) xs calculate (back) the log-likelihood
+                    # log(P(xs | m,s)), but why log?
                    ls <- dmvnorm(xs, mean=m, sigma=s, log=TRUE)
+                   # mean of the  probabability over all data points to be in cluster i
                    ls.mean <- mean(ls)
+                   # standard deviation of the probabability over all data points to be in cluster i
                    ls.sd   <- sd(ls)
                    return(c(ls.mean,ls.sd))
                  })
@@ -146,9 +151,15 @@ getLabels <- function (em, cutoff=0.05, ksigma=2.0) {
     if (!is.null(data)) {
       bestll <- dmvnorm(data@sampled[i,], mean=m, sigma=s, log=TRUE)
     }
+    # background cluster is indicated with 1 before, will now be indicated by 0,
+      # afterwards there will be no data point belonging to cluster 1
     if (l == 1 || em@weight[[i,l]] < cutoff) {
       l <- 0
     }
+    # if something went wrong, i.e. l>number of clusters or l<0, set l <- 0
+      # if the log-likelihood of the best-fitting cluster of the current data point is less than
+        # the mean log-likelihood of that theoretical cluster - 2*sd of that theoretical cluster, then
+          # also set l <- 0 (to background cluster)
     if (!(is.null(bestll)) && (l<=0 || l>ncol(llss) || bestll < llss[1,l] - ksigma*llss[2,l])) {
       l <- 0
     }
