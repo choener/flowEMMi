@@ -2,6 +2,7 @@
 library(colortools)
 library(mixtools)
 library(gplots)
+library(ggplot2)
 
 source("./R/classes.R")
 
@@ -125,7 +126,8 @@ plotDensityAndEllipsesByRelevance <- function(results, alpha=0.95, data, addLege
                                               title_color="black", axis_color="black", font="cmsltt10",
                                               title_size=16, axis_size=14, axisLabeling_size=14,
                                               face_title="bold.italic", face_axis="plain",
-                                              face_axisLabels="plain", dot_size=0.1)
+                                              face_axisLabels="plain", dot_size=0.1, ellipseDotSize=0.1,
+                                              plotGrid = TRUE)
 {
   centers <- split(results@mu, col(results@mu)) # returns a list
   sigmas <- results@sigma
@@ -184,12 +186,18 @@ plotDensityAndEllipsesByRelevance <- function(results, alpha=0.95, data, addLege
     df2 <- data.frame(x = x, y = y,
                       d = densCols(x, y, colramp = colorRampPalette(rev(rainbow(20, end = 4/6)))))
     p <- ggplot(df2) + geom_point(aes(x, y, col = d), size = dot_size) + coord_fixed(ratio = 1) +
-      scale_color_identity() + annotate("point", x = xs, y = ys, colour = colors, size=0.1)+
+      scale_color_identity() + annotate("point", x = xs, y = ys, colour = colors, size=ellipseDotSize)+
       theme_bw() + theme(text=element_text(family=font),
                          axis.title.x = element_text(color=axis_color, size=axis_size, face=face_axis),
                          axis.title.y = element_text(color=axis_color, size=axis_size, face=face_axis),
                          axis.text.x = element_text(size=axisLabeling_size, face = face_axisLabels),
-                         axis.text.y = element_text(size=axisLabeling_size, face = face_axisLabels)) +
+                         axis.text.y = element_text(size=axisLabeling_size, face = face_axisLabels),
+                         panel.background = element_rect(fill = "transparent"), # bg of the panel
+                         plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+                         #panel.grid.major = element_blank(), # get rid of major grid
+                         #panel.grid.minor = element_blank(), # get rid of minor grid
+                         legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+                         legend.box.background = element_rect(fill = "transparent")) + # get rid of legend panel bg
      xlab(xlab) + ylab(ylab) + ggtitle(title) +
       theme(plot.title = element_text(hjust = 0.5, color=title_color, size=title_size, face=face_title))
     # the 0.5 makes the title be centered
@@ -207,10 +215,18 @@ plotDensityAndEllipsesByRelevance <- function(results, alpha=0.95, data, addLege
     }
     if(addLegend)
     {
-      p <- p+ annotate(geom = "text", label="ellipse-weight", x=67000, y=30000, color="black")
-      p <- p+ annotate(geom = "text", label="high", x=70000, y=27000, color="black")
-      p <- p+ annotate(geom = "text", label="low", x=70000, y=29000- (length(results@sigma)-1)*1000, color="black")
+      p <- p+ annotate(geom = "text", label="ellipse-weight", x=67000, y=30000, color="black", size=5)
+      p <- p+ annotate(geom = "text", label="high", x=70000, y=27000, color="black", size=5)
+      p <- p+ annotate(geom = "text", label="low", x=70000, y=29000- (length(results@sigma)-1)*1000, color="black", size=5)
     }
+
+    if(!plotGrid)
+    {
+      p <- p+theme(panel.grid.major = element_blank(), # get rid of major grid
+                   panel.grid.minor = element_blank(), # get rid of minor grid
+      )
+    }
+
     if(plot)
     {
       print(p)
@@ -233,38 +249,43 @@ plotDensityAndEllipses <- function(data, results, alpha=0.95,
                                    title_color="black", axis_color="black", font="cmsltt10",
                                    title_size=16, axis_size=14, axisLabeling_size=14,
                                    face_title="bold.italic", face_axis="plain",
-                                   face_axisLabels="plain", dot_size=0.1)
+                                   face_axisLabels="plain", dot_size=0.1, ellipseDotSize=0.1,
+                                   plotGrid = TRUE)
 {
-  centers <- split(results@mu, col(results@mu)) # returns a list
-  sigmas <- results@sigma
-
-  myEllipses <- function(i)
+  if(length(results@mu) > 0)
   {
-    parameters <- getExtremes(mu=centers[[i]], sigma = sigmas[[i]], alpha = alpha, plot=FALSE)
-    return(list(major=parameters$major, minor=parameters$minor, angle=parameters$angle, center=centers[[i]]))
+    centers <- split(results@mu, col(results@mu)) # returns a list
+    sigmas <- results@sigma
+
+    myEllipses <- function(i)
+    {
+      parameters <- getExtremes(mu=centers[[i]], sigma = sigmas[[i]], alpha = alpha, plot=FALSE)
+      return(list(major=parameters$major, minor=parameters$minor, angle=parameters$angle, center=centers[[i]]))
+    }
+    indices <- 1:(length(results@sigma))
+    ellipses <- mapply(myEllipses, indices)
+    ellipses <- as.data.frame(t(ellipses))
+
+    ellipsePoints <- function(i)
+    {
+      tmp <- plotEllipse(A=ellipses$major[i][[1]], B=ellipses$minor[i][[1]], c=ellipses$center[i][[1]], phi = ellipses$angle[i][[1]], plot = FALSE)
+      return(tmp)
+    }
+    # ellipsePoints(3)
+    list <- mapply(ellipsePoints,indices)
+
+    # start at 2, because we don't want to see the background cluster
+    xs <- list[,2]$x
+    ys <- list[,2]$y
+
+    for (i in 3:length(results@sigma)){
+      xs <- append(xs, list[,i]$x)
+      ys <- append(ys, list[,i]$y)
+    }
   }
-  indices <- 1:(length(results@sigma))
-  ellipses <- mapply(myEllipses, indices)
-  ellipses <- as.data.frame(t(ellipses))
 
-  ellipsePoints <- function(i)
-  {
-    tmp <- plotEllipse(A=ellipses$major[i][[1]], B=ellipses$minor[i][[1]], c=ellipses$center[i][[1]], phi = ellipses$angle[i][[1]], plot = FALSE)
-    return(tmp)
-  }
-  # ellipsePoints(3)
-  list <- mapply(ellipsePoints,indices)
 
-  # start at 2, because we don't want to see the background cluster
-  xs <- list[,2]$x
-  ys <- list[,2]$y
-
-  for (i in 3:length(results@sigma)){
-    xs <- append(xs, list[,i]$x)
-    ys <- append(ys, list[,i]$y)
-  }
-
-  # now plot
+  # now plot data
   x <- data[,1]
   y <- data[,2]
   good <- which(x > 1500 & y > 1500)
@@ -275,15 +296,48 @@ plotDensityAndEllipses <- function(data, results, alpha=0.95,
   df2 <- data.frame(x = x, y = y,
                     d = densCols(x, y, colramp = colorRampPalette(rev(rainbow(20, end = 4/6)))))
 
-  p <- ggplot(df2) + geom_point(aes(x, y, col = d), size = dot_size) + coord_fixed(ratio = 1) +
-    scale_color_identity() + annotate("point", x = xs, y = ys, colour = "black", size=0.1)+
-    theme_bw() + theme(text=element_text(family=font),
-                       axis.title.x = element_text(color=axis_color, size=axis_size, face=face_axis),
-                       axis.title.y = element_text(color=axis_color, size=axis_size, face=face_axis),
-                       axis.text.x = element_text(size=axisLabeling_size, face = face_axisLabels),
-                       axis.text.y = element_text(size=axisLabeling_size, face = face_axisLabels)) +
-    xlab(xlab) + ylab(ylab) + ggtitle(title) +
-    theme(plot.title = element_text(hjust = 0.5, color=title_color, size=title_size, face=face_title))
+  if(length(results@mu) > 0)
+  {
+    p <- ggplot(df2) + geom_point(aes(x, y, col = d), size = dot_size) + coord_fixed(ratio = 1) +
+      scale_color_identity() + annotate("point", x = xs, y = ys, colour = "black", size=ellipseDotSize)+
+      theme_bw() + theme(text=element_text(family=font),
+                         axis.title.x = element_text(color=axis_color, size=axis_size, face=face_axis),
+                         axis.title.y = element_text(color=axis_color, size=axis_size, face=face_axis),
+                         axis.text.x = element_text(size=axisLabeling_size, face = face_axisLabels),
+                         axis.text.y = element_text(size=axisLabeling_size, face = face_axisLabels),
+                         panel.background = element_rect(fill = "transparent"), # bg of the panel
+                         plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+                         #panel.grid.major = element_blank(), # get rid of major grid
+                         #panel.grid.minor = element_blank(), # get rid of minor grid
+                         legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+                         legend.box.background = element_rect(fill = "transparent")) + # get rid of legend panel bg
+      xlab(xlab) + ylab(ylab) + ggtitle(title) +
+      theme(plot.title = element_text(hjust = 0.5, color=title_color, size=title_size, face=face_title))
+  }
+  else
+  {
+    p <- ggplot(df2) + geom_point(aes(x, y, col = d), size = dot_size) + coord_fixed(ratio = 1) +
+      scale_color_identity() +
+      theme_bw() + theme(text=element_text(family=font),
+                         axis.title.x = element_text(color=axis_color, size=axis_size, face=face_axis),
+                         axis.title.y = element_text(color=axis_color, size=axis_size, face=face_axis),
+                         axis.text.x = element_text(size=axisLabeling_size, face = face_axisLabels),
+                         axis.text.y = element_text(size=axisLabeling_size, face = face_axisLabels),
+                         panel.background = element_rect(fill = "transparent"), # bg of the panel
+                         plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+                         #panel.grid.major = element_blank(), # get rid of major grid
+                         #panel.grid.minor = element_blank(), # get rid of minor grid
+                         legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+                         legend.box.background = element_rect(fill = "transparent")) + # get rid of legend panel bg)
+      xlab(xlab) + ylab(ylab) + ggtitle(title) +
+      theme(plot.title = element_text(hjust = 0.5, color=title_color, size=title_size, face=face_title))
+  }
+  if(!plotGrid)
+  {
+    p <- p+theme(panel.grid.major = element_blank(), # get rid of major grid
+                 panel.grid.minor = element_blank(), # get rid of minor grid
+                 )
+  }
   print(p)
 } # end plotDensityAndEllipses
 
@@ -336,3 +390,68 @@ getExtremes <- function(mu, sigma, alpha=0.95, plot=FALSE, newplot=TRUE)
   return(list(extreme1=extremes1, extreme2=extremes2, extreme3=extremes3, extreme4=extremes4, major=major, minor=minor, angle=angle, A=A,B=B))
 
 }
+
+# for just plotting the data
+plotData <- function(data, xlim, ylim, plotGrid=T, title="", xlab="Forward Scatter", ylab="DAPI Fluorescence",
+                                   title_color="black", axis_color="black", font="cmsltt10",
+                                   title_size=16, axis_size=14, axisLabeling_size=14,
+                                   face_title="bold.italic", face_axis="plain",
+                                   face_axisLabels="plain", dot_size=0.1)
+{
+  x <- data[,1]
+  y <- data[,2]
+  # check lower bounds
+  good <- which(x > xlim[1] & y > ylim[1])
+  x <- x[good]
+  y <- y[good]
+  # check upper bounds
+  good <- which(x < xlim[2] & y < ylim[2])
+  x <- x[good]
+  y <- y[good]
+
+
+  df2 <- data.frame(x = x, y = y,
+                    d = densCols(x, y, colramp = colorRampPalette(rev(rainbow(20, end = 4/6)))))
+
+
+    if(plotGrid)
+    {
+      p <- ggplot(df2) + geom_point(aes(x, y, col = d), size = dot_size) + coord_fixed(ratio = 1) +
+        scale_color_identity() +
+        theme_bw() + theme(text=element_text(family=font),
+                           axis.title.x = element_text(color=axis_color, size=axis_size, face=face_axis),
+                           axis.title.y = element_text(color=axis_color, size=axis_size, face=face_axis),
+                           axis.text.x = element_text(size=axisLabeling_size, face = face_axisLabels),
+                           axis.text.y = element_text(size=axisLabeling_size, face = face_axisLabels),
+                           panel.background = element_rect(fill = "transparent"), # bg of the panel
+                           plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+                           #panel.grid.major = element_blank(), # get rid of major grid
+                           #panel.grid.minor = element_blank(), # get rid of minor grid
+                           legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+                           legend.box.background = element_rect(fill = "transparent")) + # get rid of legend panel bg) +
+        xlab(xlab) + ylab(ylab) + ggtitle(title) +
+        theme(plot.title = element_text(hjust = 0.5, color=title_color, size=title_size, face=face_title))
+    }
+  else
+  {
+    p <- ggplot(df2) + geom_point(aes(x, y, col = d), size = dot_size) + coord_fixed(ratio = 1) +
+      scale_color_identity() +
+      theme_bw() + theme(text=element_text(family=font),
+                         axis.title.x = element_text(color=axis_color, size=axis_size, face=face_axis),
+                         axis.title.y = element_text(color=axis_color, size=axis_size, face=face_axis),
+                         axis.text.x = element_text(size=axisLabeling_size, face = face_axisLabels),
+                         axis.text.y = element_text(size=axisLabeling_size, face = face_axisLabels),
+                         panel.background = element_rect(fill = "transparent"), # bg of the panel
+                         plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+                         panel.grid.major = element_blank(), # get rid of major grid
+                         panel.grid.minor = element_blank(), # get rid of minor grid
+                         legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+                         legend.box.background = element_rect(fill = "transparent")) + # get rid of legend panel bg)
+      xlab(xlab) + ylab(ylab) + ggtitle(title) +
+      theme(plot.title = element_text(hjust = 0.5, color=title_color, size=title_size, face=face_title))
+  }
+
+
+  print(p)
+  return(p)
+} # end plotData
