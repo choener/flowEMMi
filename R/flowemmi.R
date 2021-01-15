@@ -1,8 +1,9 @@
 
 source("./R/classes.R")
-#source("./R/plotting.R")
 source("./R/writestats.R")
 source("./R/emwrapper.R")
+library (parallel)
+library (gtools)
 
 
 
