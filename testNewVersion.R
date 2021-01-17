@@ -1,8 +1,12 @@
+library(flowCore)
 setwd("~/Dokumente/GitHub/ZishusPaper/data")
 fcsData <- read.FCS(paste("./C1/20160222_C1.fcs", sep = ""), alter.names = TRUE, transformation = FALSE)
 # fcsData <- read.FCS(opts$file,alter.names = TRUE,transformation = FALSE)
 print (colnames(fcsData))
 fdo <- mkFlowDataObject(fcsData, xChannel="PMT.1", yChannel="PMT.9")
+setwd("~/Dokumente/GitHub/packaging")
+source("./R/flowemmi.R")
+
 # run actual flowEMMi algorithm
 tic(msg="EM")
 results <- flowEMMi( fdo=fdo
