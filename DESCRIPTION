@@ -15,11 +15,13 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Imports:
-  Rcpp (>= 1.0),
-  RcppEigen (>= 0.3),
-  tictoc (>= 1.0),
-  flowCore (>= 1.5),
-  mvtnorm (>= 1.0),
+    Rcpp (>= 1.0),
+    RcppEigen (>= 0.3),
+    tictoc (>= 1.0),
+    flowCore (>= 1.5),
+    mvtnorm (>= 1.0),
+    parallel,
+    gtools
 LinkingTo:
   Rcpp,
   RcppEigen,

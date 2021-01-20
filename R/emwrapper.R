@@ -3,12 +3,7 @@
 # has reached a fixed point, if the log-likelihood does not improve
 # significantly anymore.
 
-library("tictoc")
-library (Rcpp)
-
-source("./R/classes.R")
-
-sourceCpp(file = "./src/em.cpp", cacheDir = "./.cacheDir")
+Rcpp::sourceCpp(file = "./src/em.cpp", cacheDir = "./.cacheDir")
 
 
 

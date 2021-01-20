@@ -3,8 +3,6 @@
 
 # TODO should later work on the class, with run information
 
-source("./R/classes.R")
-
 
 
 # textual output of the BIC information

@@ -1,12 +1,4 @@
 
-source("./R/classes.R")
-source("./R/writestats.R")
-source("./R/emwrapper.R")
-library (parallel)
-library (gtools)
-
-
-
 #' Run the flowEMMi algorithm (with reasonable defaults)
 #'
 #' Once this function has run to completion, the user can get the label for each data point using
