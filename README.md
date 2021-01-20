@@ -1,45 +1,29 @@
 # flowEMMi v0.2
 
-*flowEMMi* is a tool for automated model-based clustering of microbial data. It
-is particularly useful in two cases (i) your FCS data contains only few (maybe
-two!) channels and (ii) you need a fast tool.
+*flowEMMi* is a tool for automated model-based clustering of microbial data. It is particularly
+useful in two cases (i) your FCS data contains only few (maybe two!) channels and (ii) you need a
+fast tool.
 
-Case (i) will happen quite often with non-human data, when no antibodies are
-available and only staining is, yielding foward- and side-scatter and no
-additional channels.
+Case (i) will happen quite often with non-human data, when no antibodies are available and only
+staining is, yielding foward- and side-scatter and no additional channels.
 
-Case (ii) happens to everybody working with lots of data, typically those
-people dealing with problem (i).
+Case (ii) happens to everybody working with lots of data, typically those people dealing with
+problem (i).
 
-## How run run flowEMMi
+## Usage
 
-Here are a number of ways how to run flowEMMi for your data.
+A description of the usage of flowEMMi is currently work in progress, since we are actively
+converting flowEMMi to a library. The library will then be provided with a small frontend.
 
-### any linux
+## Installation
 
-Install the dependencies (as given in the em.R header), afterwards continue
-with the ```./em.R --help``` line below.
+### R
 
-### under NixOS
+*flowEMMi* is an R package and can be installed like thus: TODO
 
-Should work with nixpkgs under any linux, as well.
+### NixOS
 
-- Download the newest package and extract
-- cd AutoGating
-- nix-shell
-  (installation of missing dependencies)
-- ./em.R --help
-  (to show help)
-- ./em.R --log --separation -f <fcs-file.fcs>
-  (will compile the *cpp file and produce output files)
+Development under NixOS is easy, as this repository is a *Nix flake*. Calling **nix develop** will
+provide a development shell with all necessary dependencies installed. This flake is pinned to the a
+state thats work on the developers' machines.
 
-## Results
-
-After running the program, there will be:
-- png's (optionally svg's) with the cluster visualization
-- bic.png with the graph of BIC for each number of clusters: choose the first
-  number of cluster, once the graph flattens, for a sparse, good solution
-- bic.txt with the textual data
-- *txt files with relative fill data for each cluster
-- cluster-positions-X.txt with the positions and covariance matrices for each
-  cluster
