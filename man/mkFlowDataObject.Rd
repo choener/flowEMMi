@@ -2,17 +2,20 @@
 % Please edit documentation in R/classes.R
 \name{mkFlowDataObject}
 \alias{mkFlowDataObject}
-\title{Creates a flow data object.}
+\title{Creates a flow data object from a frame.}
 \usage{
 mkFlowDataObject(frame, xChannel, yChannel)
 }
 \arguments{
-\item{frame}{Fill me}
+\item{frame}{FCS data frame.}
 
-\item{xChannel}{...}
+\item{xChannel}{"x"-channel to extract.}
 
-\item{yChannel}{...}
+\item{yChannel}{"y"-channel to extract.}
+}
+\value{
+flow data object
 }
 \description{
-Fill me!
+This frame is typically the result of a call to read.FCS().
 }
