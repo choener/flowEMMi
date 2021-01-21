@@ -17,7 +17,7 @@ statBIC <- function (bic)
 
 
 
-# textual output of each cluster position
+# textual output of each cluster position.
 
 #' @export
 statCluster <- function (mu, sigma)
