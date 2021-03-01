@@ -2,7 +2,7 @@
 # need to call ./R explicitly
 
 { R, rWrapper, rstudioWrapper, rPackages
-, qt5, zlib, libxml2
+, qt5, zlib, libxml2, hdf5
 , parallel
 , fetchurl, fetchFromGitHub, recurseIntoAttrs
 , pkgs, lib, stdenv, fontconfig
@@ -10,39 +10,48 @@
 
 let
 
+  biocversion = "3.9";
+
   # rPackages to be overriden
   rP = (rPackages.override {
     overrides = (rec {
-      flowCore=rPackages.buildRPackage rec {
-        name="flowCore";
-        version="1.50.0";
-        src=fetchurl {
-          sha256="0pvcyzycsmgc8iw60q9xnhllfan6ihwpz3gvk8h1n9jmhpxzylan";
-          urls=["https://bioconductor.org/packages/3.9/bioc/src/contrib/flowCore_1.50.0.tar.gz"];
+      flowCore = rPackages.buildRPackage rec {
+        name = "flowCore";
+        version = "1.50.0";
+        src = fetchurl {
+          sha256 = "0pvcyzycsmgc8iw60q9xnhllfan6ihwpz3gvk8h1n9jmhpxzylan";
+          urls = [ "https://bioconductor.org/packages/${biocversion}/bioc/src/contrib/${name}_${version}.tar.gz" ];
         };
-        propagatedBuildInputs=with rP; [Biobase BiocGenerics graph rrcov corpcor Rcpp matrixStats MASS BH];
+        propagatedBuildInputs = with rP; [ Biobase BiocGenerics graph rrcov corpcor Rcpp matrixStats MASS BH ];
       };
-      BiocGenerics=rPackages.buildRPackage rec {
-        name="BiocGenerics";
-        version="0.30.0";
-        src=fetchurl {
-          sha256="1n87686bg5nmpqdpzwv1h551dkbxp9wk6wbmzpkgm71qxnk2yv9f";
-          urls=["https://bioconductor.org/packages/3.9/bioc/src/contrib/BiocGenerics_${version}.tar.gz"];
+      BiocGenerics = rPackages.buildRPackage rec {
+        name = "BiocGenerics";
+        version = "0.30.0";
+        src = fetchurl {
+          sha256 = "1n87686bg5nmpqdpzwv1h551dkbxp9wk6wbmzpkgm71qxnk2yv9f";
+          urls = ["https://bioconductor.org/packages/${biocversion}/bioc/src/contrib/${name}_${version}.tar.gz"];
         };
-        depends=[];
+        depends = [];
       };
       ncdfFlow = rPackages.ncdfFlow.overrideAttrs (old: rec {
-        nativeBuildInputs = old.nativeBuildInputs ++ [zlib];
+        propagatedBuildInputs = with rP; [ flowCore RcppArmadillo flowViz zlibbioc Rhdf5lib ];
+        nativeBuildInputs = [ hdf5 ];
+        depends = [];
       });
-      RcppParallel = rPackages.RcppParallel.overrideAttrs (old: rec {
-        patchPhase = ''
-          patchShebangs configure
-        '';
+      Rhdf5lib = rPackages.buildRPackage rec {
+        name = "Rhdf5lib";
+        version = "1.6.3";
+        src = fetchurl {
+          sha256 = "/neHC2v5I/fHnS0x/mns2S892+pzI7miuinxU2WxyGA=";
+          urls = ["https://bioconductor.org/packages/${biocversion}/bioc/src/contrib/${name}_${version}.tar.gz"];
+        };
+        nativeBuildInputs = [ zlib zlib.dev hdf5 hdf5.dev ];
+      };
+      flowWorkspace = rPackages.flowWorkspace.overrideAttrs (old: rec {
+        propagatedBuildInputs = with rP; [ flowCore ncdfFlow RBGL XML gridExtra Rgraphviz data_table dplyr stringr scales RProtoBufLib cytolib ];
+        nativeBuildInputs = [ libxml2 ];
+        depends = [];
       });
-      #flowWorkspace = RflowWorkspace;
-      #flowWorkspace = rPackages.flowWorkspace.overrideAttrs (old: rec {
-      #  nativeBuildInputs = old.nativeBuildInputs ++ [ libxml2 ];
-      #});
     }); # overrides
   }); # override r packages
 
@@ -58,56 +67,27 @@ let
 
   # what we need for our system
   rPemmi = with rP; [
-      flowCore
-      flowViz
       colortools
       devtools
-      roxygen2
-      Rcpp
-      RcppEigen
-      optparse
-      ggplot2
-      gtools
-      #ellipse
-      mixtools
-      #mvtnorm
-      tictoc
-      #parallel
-      #snow
-      #Rmpi
-      #RflowWorkspace
-      #CytoML
-      flowCyBar
       flowCHIC
-      viridis
-      rgl
+      flowCore
+      flowCyBar
+      flowViz
+      flowWorkspace
+      ggplot2
+      gplots
+      gtools
       here
       magick
-      gplots
+      mixtools
+      optparse
+      Rcpp
+      RcppEigen
+      rgl
+      roxygen2
+      tictoc
+      viridis
     ];
-
-  # required overrides due to failuers
-
-  RflowWorkspace = with rP;
-    let
-      biocVersion = "3.8"; # BiocVersion.version;
-    in buildRPackage rec {
-    name = "flowWorkspace";
-    version = "3.30.2";
-    src = fetchurl {
-      sha256 = "19ifpwpk9rmmfm647zm419k50hna8ib0ad75l04xbggdm6s3vm41";
-      urls = [
-        "https://www.bioconductor.org/packages/${biocVersion}/bioc/src/contrib/${name}_${version}.tar.gz"
-      ];
-    };
-    depends = [ BH Biobase BiocGenerics cytolib data_table dplyr flowCore flowViz graph gridExtra lattice latticeExtra matrixStats
-                ncdfFlow # needs override
-                RBGL RColorBrewer Rcpp Rgraphviz RProtoBufLib scales stringr XML
-                libxml2 digest RcppParallel # new deps
-              ];
-    propagatedBuildInputs = depends;
-    nativeBuildInputs = depends;
-  };
 
   # packages to compare against
   #rFlowMerge = with rP;
