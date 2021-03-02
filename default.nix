@@ -68,10 +68,12 @@ let
   # what we need for our system
   rPemmi = with rP; [
       colortools
+      CytoML
       devtools
       flowCHIC
       flowCore
       flowCyBar
+      flowUtils
       flowViz
       flowWorkspace
       ggplot2
