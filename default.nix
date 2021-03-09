@@ -10,29 +10,11 @@
 
 let
 
-  biocversion = "3.9";
+  biocversion = "3.11";
 
   # rPackages to be overriden
   rP = (rPackages.override {
     overrides = (rec {
-      flowCore = rPackages.buildRPackage rec {
-        name = "flowCore";
-        version = "1.50.0";
-        src = fetchurl {
-          sha256 = "0pvcyzycsmgc8iw60q9xnhllfan6ihwpz3gvk8h1n9jmhpxzylan";
-          urls = [ "https://bioconductor.org/packages/${biocversion}/bioc/src/contrib/${name}_${version}.tar.gz" ];
-        };
-        propagatedBuildInputs = with rP; [ Biobase BiocGenerics graph rrcov corpcor Rcpp matrixStats MASS BH ];
-      };
-      BiocGenerics = rPackages.buildRPackage rec {
-        name = "BiocGenerics";
-        version = "0.30.0";
-        src = fetchurl {
-          sha256 = "1n87686bg5nmpqdpzwv1h551dkbxp9wk6wbmzpkgm71qxnk2yv9f";
-          urls = ["https://bioconductor.org/packages/${biocversion}/bioc/src/contrib/${name}_${version}.tar.gz"];
-        };
-        depends = [];
-      };
       ncdfFlow = rPackages.ncdfFlow.overrideAttrs (old: rec {
         propagatedBuildInputs = with rP; [ flowCore RcppArmadillo flowViz zlibbioc Rhdf5lib ];
         nativeBuildInputs = [ hdf5 ];
@@ -40,17 +22,35 @@ let
       });
       Rhdf5lib = rPackages.buildRPackage rec {
         name = "Rhdf5lib";
-        version = "1.6.3";
+        version = "1.10.1";
         src = fetchurl {
-          sha256 = "/neHC2v5I/fHnS0x/mns2S892+pzI7miuinxU2WxyGA=";
+          sha256 = "yTJKFRfU6EdaH53OX3MGG1VozEDXUzVZJd3IvzPWhTg=";
           urls = ["https://bioconductor.org/packages/${biocversion}/bioc/src/contrib/${name}_${version}.tar.gz"];
         };
         nativeBuildInputs = [ zlib zlib.dev hdf5 hdf5.dev ];
       };
+      cytolib = rPackages.buildRPackage rec {
+        name = "cytolib";
+        version = "2.0.3";
+        src = fetchurl {
+          sha256 = "kuo3rrtMPE3D3Z6pE4Ym2/DXAgRoaDVQQxnh6ikPbYg=";
+          urls = ["https://bioconductor.org/packages/${biocversion}/bioc/src/contrib/${name}_${version}.tar.gz"];
+        };
+        propagatedBuildInputs = with rP; [ RcppParallel RProtoBufLib Rcpp BH Rhdf5lib RcppArmadillo ];
+        buildInputs = [ pkgs.autoreconfHook pkgs.R hdf5 ];
+      };
       flowWorkspace = rPackages.flowWorkspace.overrideAttrs (old: rec {
-        propagatedBuildInputs = with rP; [ flowCore ncdfFlow RBGL XML gridExtra Rgraphviz data_table dplyr stringr scales RProtoBufLib cytolib ];
-        nativeBuildInputs = [ libxml2 ];
+        propagatedBuildInputs = with rP; [ flowCore ncdfFlow RBGL XML gridExtra Rgraphviz data_table dplyr stringr scales RProtoBufLib cytolib ggplot2 ];
+        nativeBuildInputs = [ libxml2 hdf5 ];
         depends = [];
+      });
+      CytoML = rPackages.CytoML.overrideAttrs (old: rec {
+        propagatedBuildInputs = with rP;
+          [ cytolib flowCore flowWorkspace openCyto XML data_table jsonlite
+            RBGL Rgraphviz Biobase graph base64enc plyr dplyr ggcyto yaml
+            lattice corpcor RUnit tibble RcppParallel xml2 Rcpp BH RProtoBufLib RcppArmadillo
+          ];
+        nativeBuildInputs = [ hdf5 libxml2 ];
       });
     }); # overrides
   }); # override r packages
