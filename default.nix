@@ -4,7 +4,7 @@
 { R, rWrapper, rstudioWrapper, rPackages
 , qt5, zlib, libxml2, hdf5
 , parallel
-, fetchurl, fetchFromGitHub, recurseIntoAttrs
+, fetchurl, fetchFromGitHub, recurseIntoAttrs, runCommand, callPackage, lndir, makeWrapper
 , pkgs, lib, stdenv, fontconfig
 }:
 
@@ -91,29 +91,44 @@ let
       viridis
     ];
 
-  # packages to compare against
-  #rFlowMerge = with rP;
-  #  let
-  #    biocVersion = "3.8"; # BiocVersion.version;
-  #  in buildRPackage rec {
-  #  name = "flowMerge";
-  #  version = "2.30.1";
-  #  # homepage src = "https://bioconductor.org/packages/${biocVersion}/bioc/html/${name}.html";
-  #  src = fetchurl {
-  #    sha256 = "1dn6wxaix56r3fw273prbajc84h1k1b03q6wh0pfhy0gr6qk8wgw";
-  #    urls = [
-  #      "https://www.bioconductor.org/packages/release/bioc/src/contrib/${name}_${version}.tar.gz"
-  #    ];
-  #  };
-  #  depends = [ graph feature flowClust Rgraphviz foreach snow ];
-  #  propagatedBuildInputs = depends;
-  #  nativeBuildInputs = depends;
-  #};
-  rPcompare = with rP; []; # flowClust rFlowMerge SamSPECTRAL flowMeans ];
+  # <https://discourse.mc-stan.org/t/rstan-on-nixos/17048/12>
+  rWrapperNew = { runCommand, R, makeWrapper, lndir, recommendedPackages, packages }:
+    runCommand (R.name + "-wrapper") {
+      preferLocalBuild = true;
+      allowSubstitutes = false;
+      buildInputs = [R] ++ recommendedPackages ++ packages;
+      nativeBuildInputs = [makeWrapper];
+      # Make the list of recommended R packages accessible to other packages such as rpy2
+      # (Same as in the original rWrapper)
+      passthru = { inherit recommendedPackages; };
+    }
+    # Wrap a site lib, similar to symlinkJoin but without propagating buildInputs.
+    ''
+      mkdir -p $out/library
+      for lib in $(echo -n $R_LIBS_SITE | sed -e 's/:/\n/g'); do
+        ${lndir}/bin/lndir -silent $lib $out/library/
+      done
+      
+      mkdir -p $out/bin
+      cd ${R}/bin
+      for exe in *; do
+        makeWrapper ${R}/bin/$exe $out/bin/$exe \
+          --prefix "R_LIBS_SITE" ":" "$out/library"
+      done
+    '';
+
+  rWrapper = lib.makeOverridable rWrapperNew {
+    inherit runCommand R makeWrapper lndir;
+    recommendedPackages = with rP;
+      [ boot class cluster codetools foreign KernSmooth lattice MASS
+        Matrix mgcv nlme nnet rpart spatial survival
+      ];
+    packages = [];
+  };
 
   # final environment
-  flowEmmiR = rWrapper.override { packages = rPemmi ++ rPcompare; };
-  flowEmmiStudio = rstudioWrapper.override { packages = rPemmi ++ rPcompare ++ [ rPackages.extrafont ] ; };
+  flowEmmiR = rWrapper.override { packages = rPemmi; };
+  flowEmmiStudio = rstudioWrapper.override { packages = rPemmi ++ [ rPackages.extrafont ] ; };
   fontconfig-file = pkgs.writeText "fonts.cfg" ''
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
@@ -132,7 +147,7 @@ in
       buildInputs = with nixGL; [ flowEmmiR nixGLIntel ];
     };
     flowEmmiStudio = pkgs.mkShell {
-      buildInputs = with nixGL; [ R rPemmi rPcompare flowEmmiStudio qt5.qtbase nixGLIntel ];
+      buildInputs = with nixGL; [ R rPemmi flowEmmiStudio qt5.qtbase nixGLIntel ];
         QT_XCB_GL_INTEGRATION="none";
         FONTCONFIG_FILE = fontconfig-file; # "${fontconfig.out}/etc/fonts/fonts.conf";
         LOCALE_ARCHIVE = "${pkgs.glibcLocales}/lib/locale/locale-archive";
