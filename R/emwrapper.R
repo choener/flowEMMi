@@ -3,9 +3,11 @@
 # has reached a fixed point, if the log-likelihood does not improve
 # significantly anymore.
 
-Rcpp::sourceCpp(file = "./src/em.cpp", cacheDir = "./.cacheDir")
+# make sure that cpp functions are available
 
-
+#' @useDynLib flowEMMi, .registration = TRUE
+#' @importFrom Rcpp sourceCpp
+NULL
 
 # run the EM until a fixed point is reached, requires the threshold for the LL
 # function, the number of clusters to try to fit, as well as the flow data

@@ -27,3 +27,14 @@ Development under NixOS is easy, as this repository is a *Nix flake*. Calling **
 provide a development shell with all necessary dependencies installed. This flake is pinned to the a
 state thats work on the developers' machines.
 
+## Development
+
+- To make sure all functions are properly exported, and documentation is up-to-date:
+  ```
+  devtools::document()
+  ```
+- And to load ```flowEMMi``` during development:
+  ```
+  devtools::load_all()
+  ```
+- ```eigenIsAlive (z=13)``` should print that eigen is alive, and the cpp code properly attached.

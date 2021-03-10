@@ -9,6 +9,12 @@ using namespace Rcpp;
 // [[Rcpp::depends(RcppEigen)]]
 
 
+//' @export
+// [[Rcpp::export]]
+void eigenIsAlive (int z) {
+  std::cout << "eigen is alive! " << z << std::endl;
+  return;
+}
 
 /*
  * Given a matrix, that holds for each data point (row) the probability of
