@@ -8,20 +8,31 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    rPackages.url = "github:choener/flake-rPackages";
+    rPackages.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils, rPackages }:
     # provides "R" for all known system environments
     flake-utils.lib.eachDefaultSystem
       (system:
-        let pkgs = nixpkgs.legacyPackages.${system}; in
-        {
-          devShell = import ./shell.nix { nixpkgs = pkgs; };
+        let pkgs = import nixpkgs { inherit system; overlays = [ self.overlay rPackages.overlay ]; };
+        in {
+          devShell = pkgs.stdenv.mkDerivation {
+            name = "testEnv";
+            nativeBuildInputs = [
+              (pkgs.rstudioWrapper.override {packages = [pkgs.rPackages.CytoML];})
+              (pkgs.rWrapper.override {packages = [pkgs.rPackages.CytoML];})
+            ];
+          }; # devShell
         }
       ) //
     # provide Rstudio only for x86_64
     {
       studio = let pkgs = nixpkgs.legacyPackages.x86_64-linux;
                in  import ./studio.nix { nixpkgs = pkgs; };
+    } //
+    {
+      overlay = final: prev: {};
     };
 }

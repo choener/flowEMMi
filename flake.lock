@@ -15,6 +15,21 @@
         "type": "github"
       }
     },
+    "flake-utils_2": {
+      "locked": {
+        "lastModified": 1609246779,
+        "narHash": "sha256-eq6ZXE/VWo3EMC65jmIT6H/rrUc9UWOWVujkzav025k=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "08c7ad4a0844adc4a7f9f5bb3beae482e789afa4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1614989413,
@@ -31,10 +46,32 @@
         "type": "github"
       }
     },
+    "rPackages": {
+      "inputs": {
+        "flake-utils": "flake-utils_2",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1616529606,
+        "narHash": "sha256-yYo5vHT5kioMSsU+vvV8QnCx06tbqsMXQZynir1WduU=",
+        "owner": "choener",
+        "repo": "flake-rPackages",
+        "rev": "e1a3c277787a64c5467ed93ddf609f4207c92fec",
+        "type": "github"
+      },
+      "original": {
+        "owner": "choener",
+        "repo": "flake-rPackages",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "rPackages": "rPackages"
       }
     }
   },
