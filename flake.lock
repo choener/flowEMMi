@@ -54,11 +54,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1617183155,
-        "narHash": "sha256-rX5gmKEnZ8EqBoQt6L37SDIbAYkWNZI7kNtNWCEtciA=",
+        "lastModified": 1618318288,
+        "narHash": "sha256-0jWKREsC3bwB6k4qmnisMNQHMWNRfik53sYolq4hKZI=",
         "owner": "choener",
         "repo": "flake-rPackages",
-        "rev": "2b455a6fd877470ad1b22c926aa23dc404ad3875",
+        "rev": "da721a619efd2b6fee39d9d9b4a233d7797f35db",
         "type": "github"
       },
       "original": {
