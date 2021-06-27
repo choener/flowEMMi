@@ -7,7 +7,7 @@
 
   inputs = {
     #nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-20.09";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-21.05";
     flake-utils.url = "github:numtide/flake-utils";
     rPackages.url = "github:choener/flake-rPackages";
     rPackages.inputs.nixpkgs.follows = "nixpkgs";
@@ -21,9 +21,10 @@
         in {
           devShell = pkgs.stdenv.mkDerivation {
             name = "testEnv";
-            nativeBuildInputs = [
-              (pkgs.rstudioWrapper.override {packages = [pkgs.rPackages.CytoML];})
-              (pkgs.rWrapper.override {packages = [pkgs.rPackages.CytoML];})
+            nativeBuildInputs = let packages = with pkgs.rPackages; [CytoML devtools RcppEigen tictoc];
+            in [
+              (pkgs.rstudioWrapper.override {inherit packages;})
+              (pkgs.rWrapper.override {inherit packages;})
             ];
           }; # devShell
         }
