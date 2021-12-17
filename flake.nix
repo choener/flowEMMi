@@ -19,7 +19,7 @@
       (system:
         let pkgs = import nixpkgs {
               inherit system;
-              overlays = [ self.overlay rPackages.overlay ];
+              overlays = [ rPackages.overlay rPackages.overlays.flowCytometry self.overlay ];
               config.allowUnfree = true;
             };
             packages = with pkgs.rPackages;
@@ -37,7 +37,11 @@
         in {
           devShell = pkgs.stdenv.mkDerivation {
             name = "testEnv";
-            nativeBuildInputs = [ rstudio r rstudiowrapper ];
+            nativeBuildInputs = let packages = with pkgs.rPackages; [CytoML devtools RcppEigen tictoc Phenoflow];
+            in [
+              (pkgs.rstudioWrapper.override {inherit packages;})
+              (pkgs.rWrapper.override {inherit packages;})
+            ];
           }; # devShell
           apps = {
             rstudio = { type="app"; program="${rstudio}/bin/rstudio"; };
