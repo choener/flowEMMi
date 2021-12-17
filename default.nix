@@ -23,9 +23,12 @@ let
 
   # what we need for our system
   rPemmi = with rPackages; [
+      Cairo
       colortools
       CytoML
       devtools
+      dynr
+      extrafont
       flowCHIC
       flowCore
       flowCyBar
@@ -51,7 +54,7 @@ let
 
   # final environment
   flowEmmiR = rWrapper.override { packages = rPemmi; };
-  flowEmmiStudio = rstudioWrapper.override { packages = rPemmi ++ [ rPackages.extrafont ] ; };
+  flowEmmiStudio = rstudioWrapper.override { packages = rPemmi; };
   fontconfig-file = pkgs.writeText "fonts.cfg" ''
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
@@ -62,6 +65,7 @@ let
     <dir>${pkgs.cm_unicode}/share/fonts/</dir>
     <dir>${pkgs.liberation_ttf}/share/fonts/</dir>
     <dir>${pkgs.aileron}/share/fonts/</dir>
+    <dir>${pkgs.corefonts}/share/fonts/</dir>
     </fontconfig>
   '';
 in
