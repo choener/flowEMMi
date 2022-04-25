@@ -34,14 +34,22 @@
               RSTUDIO_CHROMIUM_ARGUMENTS="--disable-gpu" ${rstudio}/bin/rstudio $@
             '';
             test = import ./studio.nix { nixpkgs = pkgs; };
+            fontconfig-file = pkgs.writeText "fonts.cfg" ''
+              <?xml version="1.0" encoding="UTF-8"?>
+              <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+              <fontconfig>
+              <cachedir prefix="xdg">fontconfig</cachedir>
+              <dir>${pkgs.corefonts}/share/fonts/</dir>
+              <dir>${pkgs.liberation_ttf}/share/fonts/</dir>
+              <dir>${pkgs.carlito}/share/fonts/</dir>
+              <dir>${pkgs.vistafonts}/share/fonts/</dir>
+              </fontconfig>
+            '';
         in {
-          devShell = pkgs.stdenv.mkDerivation {
+          devShell = pkgs.mkShell {
             name = "testEnv";
-            nativeBuildInputs = let packages = with pkgs.rPackages; [CytoML devtools RcppEigen tictoc Phenoflow];
-            in [
-              (pkgs.rstudioWrapper.override {inherit packages;})
-              (pkgs.rWrapper.override {inherit packages;})
-            ];
+            packages = [ (pkgs.rWrapper.override {inherit packages;}) ];
+            FONTCONFIG_FILE=fontconfig-file;
           }; # devShell
           apps = {
             rstudio = { type="app"; program="${rstudio}/bin/rstudio"; };

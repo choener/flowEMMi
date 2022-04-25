@@ -11,7 +11,7 @@ library (CytoML)
 library (stringr)
 library(flowCore)
 
-library (SamSPECTRAL)
+# library (SamSPECTRAL)
 
 
 # given two vectors of label assignments, calculate the TP, FT, TN, FN absolute
