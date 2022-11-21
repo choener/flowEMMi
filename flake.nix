@@ -27,6 +27,7 @@
                 extrafont showtext Cairo # these are for playing with fonts, not really necessary
                 # TODO dynr needs gsl; until I update flake-rPackages, let's do this ...
                 (dynr.overrideAttrs (old: { nativeBuildInputs = old.nativeBuildInputs ++ [pkgs.gsl]; }))
+                mltools
               ];
             rstudio = pkgs.rstudioWrapper.override {inherit packages;};
             r = pkgs.rWrapper.override {inherit packages;};
